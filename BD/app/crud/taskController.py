@@ -1,64 +1,98 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
-from app.models.task import Task
-
+from sqlalchemy import and_
+from app.models.task import Task, TaskStatus, TaskPriority
 from app.schemas.taskSchema import TaskCreate, TaskUpdate
 from typing import List, Optional
+from datetime import datetime
 
 class TaskCRUD:
 
-    def create(self, db: Session, *, obj_in: TaskCreate, owner_id: int) -> Project:
-        """Crear una nueva tarea"""
-        task = Project(
-            name=obj_in.name,                    # 🔧 name, no title
-            description=obj_in.description,
-            owner_id=owner_id                    # 🔧 owner_id, no author_id
+    def create(self, db: Session, *, obj_in: TaskCreate, project_id: int, creator_id: int) -> Task:
+        """Crear una nueva tarea en un proyecto"""
+        task = Task(
+            title=getattr(obj_in, "title", None),
+            description=getattr(obj_in, "description", None),
+            status=getattr(obj_in, "status", TaskStatus.TODO),
+            priority=getattr(obj_in, "priority", TaskPriority.MEDIUM),
+            due_date=getattr(obj_in, "due_date", None),
+            project_id=project_id,
+            assignee_id=getattr(obj_in, "assignee_id", None) or creator_id
         )
         db.add(task)
         db.commit()
         db.refresh(task)
         return task
-    def get_all(self, db: Session, *, owner_id: int, skip: int = 0, limit: int = 100, search: str = None) -> List[Project]:
-        """Obtener todas las tareas del usuario con paginación y búsqueda"""
-        query = db.query(Project).filter(
-            and_(Project.owner_id == owner_id, Project.archived == False)
-        )
-        
-        # Búsqueda por nombre
-        if search:
-            query = query.filter(Project.name.ilike(f"%{search}%"))
-        
-        return query.offset(skip).limit(limit).all()
-    def get_by_id(self, db: Session, *, project_id: int, owner_id: int) -> Optional[Project]:
-        """Obtener tarea por ID (solo del owner)"""
-        return db.query(Project).filter(
-            and_(Project.id == project_id, Project.owner_id == owner_id)
-        ).first()
-    def update(self, db: Session, *, project_id: int, obj_in: TaskUpdate, owner_id: int) -> Optional[Project]:
-        """Actualizar tarea"""
-        task = db.query(Project).filter(
-            and_(Project.id == project_id, Project.owner_id == owner_id)
-        ).first()
-        
-        if task:
-            update_data = obj_in.dict(exclude_unset=True)  # Solo campos que se enviaron
-            for field, value in update_data.items():
-                setattr(task, field, value)
-            
-            db.commit()
-            db.refresh(task)
-            return task
-        return None
-    def archive(self, db: Session, *, project_id: int, owner_id: int) -> bool:
-        """Archivar tarea (soft delete)"""
-        task = db.query(Project).filter(
-            and_(Project.id == project_id, Project.owner_id == owner_id)
-        ).first()
 
-        if task:
-            task.archived = True
-            db.commit()
-            return True
-        return False
+    def get_by_project(
+        self,
+        db: Session,
+        *,
+        project_id: int,
+        skip: int = 0,
+        limit: int = 100,
+        search: Optional[str] = None,
+        status: Optional[TaskStatus] = None,
+        priority: Optional[TaskPriority] = None,
+        overdue: Optional[bool] = None
+    ) -> List[Task]:
+        """Obtener tareas de un proyecto con filtros"""
+        query = db.query(Task).filter(Task.project_id == project_id)
+
+        if search:
+            query = query.filter(Task.title.ilike(f"%{search}%"))
+
+        if status:
+            query = query.filter(Task.status == status)
+
+        if priority:
+            query = query.filter(Task.priority == priority)
+
+        if overdue is not None:
+            now = datetime.utcnow()
+            if overdue:
+                query = query.filter(Task.due_date != None, Task.due_date < now)
+            else:
+                query = query.filter((Task.due_date == None) | (Task.due_date >= now))
+
+        return query.offset(skip).limit(limit).all()
+
+    def get_by_id(self, db: Session, *, task_id: int) -> Optional[Task]:
+        """Obtener tarea por ID"""
+        return db.query(Task).filter(Task.id == task_id).first()
+
+    def update(self, db: Session, *, task_id: int, obj_in: TaskUpdate) -> Optional[Task]:
+        """Actualizar tarea"""
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            return None
+
+        update_data = obj_in.dict(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(task, field, value)
+
+        db.commit()
+        db.refresh(task)
+        return task
+
+    def delete(self, db: Session, *, task_id: int) -> bool:
+        """Eliminar tarea"""
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            return False
+        db.delete(task)
+        db.commit()
+        return True
+
+    def count_total(self, db: Session, *, project_id: int, search: Optional[str] = None, status: Optional[TaskStatus] = None, priority: Optional[TaskPriority] = None) -> int:
+        """Contar total de tareas para paginación"""
+        query = db.query(Task).filter(Task.project_id == project_id)
+        if search:
+            query = query.filter(Task.title.ilike(f"%{search}%"))
+        if status:
+            query = query.filter(Task.status == status)
+        if priority:
+            query = query.filter(Task.priority == priority)
+        return query.count()
+
 # Instancia global para usar en las rutas
 task_crud = TaskCRUD()
