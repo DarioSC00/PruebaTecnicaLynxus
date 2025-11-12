@@ -17,6 +17,7 @@ type FormData = {
 export default function Register() {
   const router = useRouter();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>();
+  const [showPassword, setShowPassword] = React.useState(false);
   
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     try {
@@ -104,15 +105,48 @@ export default function Register() {
 
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  className={styles.input}
-                  type="password"
-                  placeholder="••••••••"
-                  {...register("password", { required: "Password is required", minLength: { value: 6, message: "Minimum 6 characters" } })}
-                  aria-invalid={!!errors.password}
-                />
-                {errors.password && <span className={styles.fieldError}>{errors.password.message}</span>}
+                <div className={styles.passwordWrapper}>
+                  <input
+                    id="password"
+                    className={styles.input}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    {...register("password", {
+                      required: "Password is required",
+                      minLength: { value: 6, message: "Minimum 6 characters" },
+                      validate: (v: string) => {
+                        const bytes = new TextEncoder().encode(v).length;
+                        return bytes <= 72 || "Password too long (max 72 bytes)";
+                      }
+                    })}
+                    aria-invalid={!!errors.password}
+                    aria-describedby={errors.password ? "password-error" : undefined}
+                  />
+                  <button
+                    type="button"
+                    className={styles.passwordToggle}
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? (
+                      /* eye-off icon */
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                        <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M10.58 10.58A3 3 0 0113.42 13.42" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M9.88 5.94A15.72 15.72 0 0121 12c-1.21 2.1-3.05 3.85-5.2 4.95" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M14.12 18.06A15.72 15.72 0 013 12c1.21-2.1 3.05-3.85 5.2-4.95" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : (
+                      /* eye icon */
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {errors.password && <span id="password-error" className={styles.fieldError}>{errors.password.message}</span>}
               </div>
 
               <button type="submit" className={styles.submitButton} disabled={isSubmitting} aria-busy={isSubmitting}>

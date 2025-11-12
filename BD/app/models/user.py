@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
-from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 class User(Base):
@@ -18,8 +18,8 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relaciones - Activar cuando tengas los otros modelos
-    projects = relationship("Project", back_populates="owner")
-    assigned_tasks = relationship("Task", back_populates="assignee")  
+    projects = relationship("Project", back_populates="owner", cascade="all, delete-orphan")
+    assigned_tasks = relationship("Task", back_populates="assignee")
     comments = relationship("Comment", back_populates="author")
     
     def __repr__(self):

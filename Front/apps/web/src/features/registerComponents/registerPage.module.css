@@ -183,6 +183,47 @@
 .signupLink { color:#667eea; font-weight:600; text-decoration:none; transition:color .15s ease; }
 .signupLink:hover { color:#764ba2; text-decoration:underline; }
 
+/* Password toggle wrapper and button */
+.passwordWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ensure input leaves space for the button */
+.passwordWrapper .input {
+  padding-right: 44px;
+}
+
+/* eye button */
+.passwordToggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 32px;
+  width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #667eea;
+  border-radius: 8px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  padding: 4px;
+}
+
+.passwordToggle:hover {
+  background-color: rgba(102, 126, 234, 0.08);
+}
+
+.passwordToggle:focus {
+  outline: 2px solid rgba(102,126,234,0.18);
+  outline-offset: 2px;
+}
+
 /* responsive */
 @media (max-width: 900px) {
   .container { grid-template-columns: 1fr; width: 92vw; }
