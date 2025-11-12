@@ -1,110 +1,59 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import get_db
-from app.crud.user import user_crud
-from app.schemas.user import UserCreate, UserResponse, UserUpdate, UserLogin
-from app.core.security import create_access_token, get_current_user, get_current_active_user
+from app.crud import userController as user_crud
+from app.schemas.userSchema import UserCreate, LoginRequest, LoginResponse, UserRead, UserUpdate
+from app.core.security import hash_password, create_access_token, verify_password
 from app.models.user import User
+from app.api.dependencies import get_current_active_user  # si existe este helper
 
 router = APIRouter()
 
-# --------->Aqui irian las rutas de login <---------
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+
+router = APIRouter()
+
+@router.post("/register", response_model=UserRead)
 def register_user(
-    user_in: UserCreate,
+    payload: UserCreate,
     db: Session = Depends(get_db)
 ):
     """Register a new user"""
-    # verificacion del correo si hay duplicidad
-    existing_user = user_crud.get_by_email(db, email=user_in.email)
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
+    user = user_crud.get_by_email(db, email=payload.email)
+    if user:
+        raise HTTPException(status_code=400, detail="Email already registered")
     
-    user = user_crud.create(db=db, obj_in=user_in)
-    return user
+    return user_crud.create(db=db, obj_in=payload)
 
-@router.post("/login")
+@router.post("/login", response_model=LoginResponse)
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    payload: LoginRequest,
     db: Session = Depends(get_db)
 ):
     """Login user - returns JWT token"""
-    user = user_crud.authenticate(
-        db, 
-        email=form_data.username,  
-        password=form_data.password
-    )
-    
-    if not user:
+    user = user_crud.get_by_email(db, payload.email)
+    if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    if not user_crud.is_active(user):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user"
-        )
-    
-    # Crear token JWT
-    access_token = create_access_token(subject=str(user.id))
-    
+    access_token = create_access_token({"sub": user.id})
     return {
         "access_token": access_token,
-        "token_type": "bearer",
-        "user": UserResponse.from_orm(user)
+        "user": user
     }
 
-@router.post("/login/email")  
-def login_with_email(
-    credentials: UserLogin,
-    db: Session = Depends(get_db)
-):
-    """alternative login with email and password"""
-    user = user_crud.authenticate(
-        db, 
-        email=credentials.email, 
-        password=credentials.password
-    )
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
-        )
-    
-    if not user_crud.is_active(user):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user"
-        )
-    
-    access_token = create_access_token(subject=str(user.id))
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": UserResponse.from_orm(user)
-    }
-
-# --------->Aqui irian las rutas de usuarios <---------
-
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=UserRead)
 def get_current_user_info(
     current_user: User = Depends(get_current_active_user)
 ):
     """Obtain current user information"""
     return current_user
 
-@router.put("/me", response_model=UserResponse)
+@router.put("/me", response_model=UserRead)
 def update_current_user(
     user_update: UserUpdate,
     db: Session = Depends(get_db),
@@ -143,7 +92,7 @@ def deactivate_current_user(
 
 # === RUTAS ADMINISTRATIVAS (OPCIONAL) ===
 
-@router.get("/", response_model=List[UserResponse])
+@router.get("/", response_model=List[UserRead])
 def get_users(
     skip: int = 0,
     limit: int = 100,
@@ -160,7 +109,7 @@ def get_users(
     )
     return users
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}", response_model=UserRead)
 def get_user_by_id(
     user_id: int,
     db: Session = Depends(get_db),

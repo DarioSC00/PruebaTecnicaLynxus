@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from app.models.user import User  # 🔧 User, no Project
-from app.schemas.user import UserCreate, UserUpdate, UserInDB
-from app.core.security import get_password_hash, verify_password  # Para hashear contraseñas
+from app.models.user import User
+from app.schemas.userSchema import UserCreate, UserUpdate, UserInDB
+from app.core.security import hash_password, verify_password  # Para hashear contraseñas
 from typing import List, Optional
 
 class UserCRUD:
@@ -10,7 +10,7 @@ class UserCRUD:
     def create(self, db: Session, *, obj_in: UserCreate) -> User:
         """Create a new user"""
         # Hashear la contraseña antes de guardar
-        hashed_password = get_password_hash(obj_in.password)
+        hashed_password = hash_password(obj_in.password)
         
         user = User(
             email=obj_in.email,
@@ -55,7 +55,7 @@ class UserCRUD:
             
             # Si se actualiza la contraseña, hashearla
             if "password" in update_data:
-                update_data["password_hash"] = get_password_hash(update_data.pop("password"))
+                update_data["password_hash"] = hash_password(update_data.pop("password"))
             
             for field, value in update_data.items():
                 setattr(user, field, value)

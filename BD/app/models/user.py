@@ -10,7 +10,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    name = Column(String(100), nullable=False)  # 🔧 Cambiar Full_name → name
+    name = Column(String(100), nullable=True)  # 🔧 Cambiar Full_name → name
     is_active = Column(Boolean, default=True)
     
     # Timestamps

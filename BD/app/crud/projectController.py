@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from app.models.project import Project
-from app.schemas.project import ProjectCreate, ProjectUpdate 
+from app.schemas.projectSchema import ProjectCreate, ProjectUpdate
+
 from typing import List, Optional
 
 class ProjectCRUD:

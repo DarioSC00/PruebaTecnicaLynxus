@@ -6,22 +6,22 @@ from typing import List, Optional
 from app.core.database import get_db
 
 # CRUD operations
-from app.crud.task import task_crud
-from app.crud.project import project_crud  # 🔧 FALTA: verificar que el proyecto existe
+from app.crud import taskController as task_crud
+from app.crud.projectController import project_crud  
 
 # Schemas
-from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate  # 🔧 PascalCase + typo corregido
+from app.schemas.taskSchema import TaskCreate, TaskRead, TaskUpdate
 
 # Authentication
 from app.core.security import get_current_active_user
 from app.models.user import User
-from app.models.task import TaskStatus, TaskPriority  # 🔧 Para filtros
+from app.models.task import TaskStatus, TaskPriority  # Para filtros
 
 router = APIRouter()
 
 # === RUTAS DE TAREAS POR PROYECTO ===
 
-@router.post("/projects/{project_id}/tasks", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/projects/{project_id}/tasks", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
 def create_task(
     project_id: int,
     task_in: TaskCreate,
@@ -29,45 +29,39 @@ def create_task(
     current_user: User = Depends(get_current_active_user)
 ):
     """Create a new task in a project"""
-    # 🔧 Verificar que el proyecto existe y pertenece al usuario
     project = project_crud.get_by_id(db=db, project_id=project_id, owner_id=current_user.id)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found or you don't have permission"
         )
-    
-    # 🔧 Crear tarea con project_id, no owner_id
     task = task_crud.create(
         db=db,
         obj_in=task_in,
-        project_id=project_id,  # 🔧 CORRECTO: project_id
-        creator_id=current_user.id  # 🔧 Quien crea la tarea
+        project_id=project_id,
+        creator_id=current_user.id
     )
     return task
 
-@router.get("/projects/{project_id}/tasks", response_model=List[TaskResponse])
+@router.get("/projects/{project_id}/tasks", response_model=List[TaskRead])
 def get_project_tasks(
     project_id: int,
     skip: int = 0,
     limit: int = 100,
-    search: str = None,
-    status: Optional[TaskStatus] = Query(None, description="Filter by task status"),  # 🔧 NUEVO
-    priority: Optional[TaskPriority] = Query(None, description="Filter by priority"),  # 🔧 NUEVO
-    overdue: Optional[bool] = Query(None, description="Filter overdue tasks"),  # 🔧 NUEVO
+    search: Optional[str] = None,
+    status: Optional[TaskStatus] = Query(None, description="Filter by task status"),
+    priority: Optional[TaskPriority] = Query(None, description="Filter by priority"),
+    overdue: Optional[bool] = Query(None, description="Filter overdue tasks"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
     """Get tasks from a project with filters"""
-    # 🔧 Verificar que el proyecto existe y pertenece al usuario
     project = project_crud.get_by_id(db=db, project_id=project_id, owner_id=current_user.id)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found or you don't have permission"
         )
-    
-    # 🔧 Obtener tareas con filtros
     tasks = task_crud.get_by_project(
         db=db,
         project_id=project_id,
@@ -80,11 +74,11 @@ def get_project_tasks(
     )
     return tasks
 
-@router.get("/tasks/{task_id}", response_model=TaskResponse)
+@router.get("/tasks/{task_id}", response_model=TaskRead)
 def get_task(
     task_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)  # 🔧 FALTA auth
+    current_user: User = Depends(get_current_active_user)
 ):
     """Get task by ID"""
     task = task_crud.get_by_id(db=db, task_id=task_id)
@@ -93,18 +87,15 @@ def get_task(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
-    
-    # 🔧 Verificar permisos: el usuario debe ser owner del proyecto
     project = project_crud.get_by_id(db=db, project_id=task.project_id, owner_id=current_user.id)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to view this task"
         )
-    
     return task
 
-@router.put("/tasks/{task_id}", response_model=TaskResponse)
+@router.put("/tasks/{task_id}", response_model=TaskRead)
 def update_task(
     task_id: int,
     task_update: TaskUpdate,
@@ -112,22 +103,18 @@ def update_task(
     current_user: User = Depends(get_current_active_user)
 ):
     """Update a task"""
-    # 🔧 Verificar que la tarea existe
     task = task_crud.get_by_id(db=db, task_id=task_id)
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
-    
-    # 🔧 Verificar permisos
     project = project_crud.get_by_id(db=db, project_id=task.project_id, owner_id=current_user.id)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to update this task"
         )
-    
     updated_task = task_crud.update(db=db, task_id=task_id, obj_in=task_update)
     return updated_task
 
@@ -138,21 +125,17 @@ def delete_task(
     current_user: User = Depends(get_current_active_user)
 ):
     """Delete a task"""
-    # 🔧 Verificar que la tarea existe
     task = task_crud.get_by_id(db=db, task_id=task_id)
     if not task:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
-    
-    # 🔧 Verificar permisos
     project = project_crud.get_by_id(db=db, project_id=task.project_id, owner_id=current_user.id)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to delete this task"
         )
-    
     task_crud.delete(db=db, task_id=task_id)
     return {"message": "Task deleted successfully"}

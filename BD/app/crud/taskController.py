@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from app.models.task import Project
-from app.schemas.task import TaskCreate, TaskUpdate  # 🔧 Import correcto
+from app.models.task import Task
+
+from app.schemas.taskSchema import TaskCreate, TaskUpdate
 from typing import List, Optional
 
 class TaskCRUD:

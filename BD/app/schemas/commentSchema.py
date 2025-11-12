@@ -5,6 +5,9 @@ from datetime import datetime
 class CommentCreate(BaseModel):
     body: str = Field(..., min_length=1)
 
+class CommentUpdate(BaseModel):
+    body: Optional[str] = Field(None, min_length=1)
+
 class CommentRead(BaseModel):
     id: int
     task_id: int

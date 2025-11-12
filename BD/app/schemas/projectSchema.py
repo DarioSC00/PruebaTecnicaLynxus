@@ -1,29 +1,28 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 
+# --- Crear Proyecto ---
 class ProjectCreate(BaseModel):
-    name: str = Field(..., min_length=1)
+    name: str = Field(..., min_length=3, max_length=100)
     description: Optional[str] = None
 
+
+# --- Actualizar Proyecto ---
 class ProjectUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1)
+    name: Optional[str] = Field(None, min_length=3, max_length=100)
     description: Optional[str] = None
-    archived: Optional[bool] = None
 
-class ProjectRead(BaseModel):
+
+# --- Respuesta del Proyecto ---
+class ProjectResponse(BaseModel):
     id: int
-    owner_id: int
     name: str
-    description: Optional[str] = None
-    archived: bool
+    description: Optional[str]
+    owner_id: int
+    archived: bool = False
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
-
-class ProjectsPage(BaseModel):
-    items: List[ProjectRead]
-    total: int
-    page: int
-    page_size: int
+        from_attributes = True  # ✅ reemplaza orm_mode en Pydantic v2

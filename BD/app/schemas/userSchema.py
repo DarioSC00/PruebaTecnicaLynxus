@@ -7,19 +7,41 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8)
     name: Optional[str] = None
 
-class UserLogin(BaseModel):
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = Field(None, min_length=8)
+    name: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class UserInDB(BaseModel):
+    id: int
     email: EmailStr
-    password: str
+    name: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime
+
+    class Config:
+        from_attributes = True  # ✅ reemplaza 'orm_mode = True' en Pydantic v2
+
 
 class UserRead(BaseModel):
     id: int
-    email: EmailStr
+    email: str
     name: Optional[str] = None
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # ✅ evita el warning de 'orm_mode'
 
-class UserUpdate(BaseModel):
-    name: Optional[str] = None
-    password: Optional[str] = Field(None, min_length=8)
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserRead
