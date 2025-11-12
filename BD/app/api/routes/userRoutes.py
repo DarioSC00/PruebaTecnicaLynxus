@@ -1,38 +1,54 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 from app.api.dependencies import get_db
-from app.schemas.userSchema import UserCreate, UserInDB
 from app.crud.userController import user_crud
+from app.models.user import User
 
 router = APIRouter()
 
-BCRYPT_MAX_BYTES = 72
-
-@router.post("/register", response_model=UserInDB, status_code=status.HTTP_201_CREATED)
-def register_user(
-    payload: UserCreate,
-    db: Session = Depends(get_db)
+# GET /users?page=1&page_size=10&q=
+@router.get("/", status_code=status.HTTP_200_OK)
+def read_users(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=200),
+    q: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
 ):
-    """Register a new user"""
-    # validar longitud en bytes antes de cualquier hash
-    if len(payload.password.encode("utf-8")) > BCRYPT_MAX_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Password too long: max {BCRYPT_MAX_BYTES} bytes"
+    query = db.query(User)
+    if q:
+        q_like = f"%{q.strip().lower()}%"
+        query = query.filter(
+            func.lower(User.name).like(q_like) | func.lower(User.email).like(q_like)
         )
 
-    if user_crud.get_by_email(db, email=payload.email):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
-    
-    try:
-        user = user_crud.create(db, obj_in=payload)
-        return user
-    except Exception:
-        import logging
-        logging.exception("Error creating user")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+    total = query.count()
+    items = query.offset((page - 1) * page_size).limit(page_size).all()
 
-# Nota: he comentado/quitado temporalmente el resto de endpoints (login/me/PUT/DELETE/ADMIN)
-# porque referencian tipos y dependencias que actualmente no están importados/definidos
-# (LoginRequest, LoginResponse, get_current_active_user, UserRead, etc).
-# Reintroduciremos esas rutas una vez revisemos y alineemos los schemas y las dependencias.
+    return {
+        "items": [
+            {
+                "id": u.id,
+                "name": getattr(u, "name", None),
+                "email": u.email,
+                "created_at": getattr(u, "created_at", None),
+            }
+            for u in items
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+    }
+
+@router.get("/{user_id}", status_code=status.HTTP_200_OK)
+def read_user(user_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
+    user = user_crud.get(db, id=user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return {
+        "id": user.id,
+        "name": getattr(user, "name", None),
+        "email": user.email,
+        "created_at": getattr(user, "created_at", None),
+    }

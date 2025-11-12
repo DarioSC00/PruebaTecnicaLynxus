@@ -1,57 +1,53 @@
 "use client";
 
-import React, { useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { useMutation, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { loginWithEmail as login } from "./loginService/loginService";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { loginWithEmail } from "./loginService/loginService";
 import styles from "./loginPage.module.css";
+import Link from "next/link";
 import { toast } from "react-toastify";
 
-type FormData = { email: string; password: string };
-type User = { id: number; email: string; name?: string; created_at?: string };
-type LoginResponse = { access_token?: string; user?: User } | Record<string, unknown>;
-type MutationError = { response?: { data?: { detail?: string } }; message?: string };
-
-const queryClient = new QueryClient();
-
-function LoginFormInner() {
+export default function Login() {
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const mutation = useMutation<LoginResponse, MutationError, FormData>({
-    mutationFn: async (data: FormData): Promise<LoginResponse> => {
-      const res = await login({ email: data.email, password: data.password });
-      return res as LoginResponse;
-    },
-    onSuccess: () => {
-      toast.success("Login successful!");
-      router.replace("/projects");
-    },
-    onError: (err) => {
-      const message = err?.response?.data?.detail ?? err?.message ?? "Authentication error";
-      setServerError(message);
-      toast.error(message);
-    },
-  });
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
-  function hasIsLoadingField(x: unknown): x is { isLoading: boolean } {
-    return (
-      typeof x === "object" &&
-      x !== null &&
-      Object.prototype.hasOwnProperty.call(x, "isLoading") &&
-      typeof (x as { isLoading: unknown }).isLoading === "boolean"
-    );
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const payload = {
+      email: fd.get("email") as string,
+      password: fd.get("password") as string,
+    };
+
+    try {
+      const res = await loginWithEmail(payload);
+      // si devuelves token en res.access_token guárdalo aquí (localStorage / cookie)
+      if (res?.access_token) {
+        localStorage.setItem("token", res.access_token);
+      }
+      router.push("/user");
+    } catch (err: unknown) {
+      // extraer mensaje de forma segura sin usar `any`
+      let message = "Error al iniciar sesión";
+      if (typeof err === "object" && err !== null) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const maybeAny = err as any;
+        message = maybeAny?.response?.data?.detail ?? maybeAny?.message ?? message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      } else {
+        message = String(err);
+      }
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   }
-  const _status = (mutation as unknown as { status?: string }).status;
-  const isLoading = hasIsLoadingField(mutation) ? mutation.isLoading : _status === "loading" || _status === "pending";
-
-  const onSubmit: SubmitHandler<FormData> = (data) => {
-    setServerError(null);
-    mutation.mutate(data);
-  };
 
   return (
     <main className={styles.page}>
@@ -89,47 +85,42 @@ function LoginFormInner() {
             <h2 className={styles.formTitle}>Welcome back</h2>
             <p className={styles.formSubtitle}>Sign in to your account to continue</p>
 
-            {serverError && (
+            {error && (
               <div role="alert" className={styles.errorAlert}>
                 <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style={{ flexShrink: 0 }}>
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
-                <span>{serverError}</span>
+                <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)} noValidate className={styles.form}>
+            <form onSubmit={onSubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="email">Email address</label>
                 <input
                   id="email"
+                  name="email"
                   className={styles.input}
                   type="email"
                   placeholder="you@example.com"
-                  aria-invalid={!!errors.email}
-                  {...register("email", { required: "Email is required" })}
+                  required
                 />
-                {errors.email && <span className={styles.fieldError}>{errors.email.message}</span>}
               </div>
 
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="password">Password</label>
                 <input
                   id="password"
+                  name="password"
                   className={styles.input}
                   type="password"
                   placeholder="••••••••"
-                  aria-invalid={!!errors.password}
-                  {...register("password", {
-                    required: "Password is required",
-                    minLength: { value: 6, message: "Minimum 6 characters" },
-                  })}
+                  required
                 />
-                {errors.password && <span className={styles.fieldError}>{errors.password.message}</span>}
               </div>
 
-              <button type="submit" className={styles.submitButton} disabled={isLoading} aria-busy={isLoading}>
-                {isLoading ? (
+              <button type="submit" className={styles.submitButton} disabled={loading}>
+                {loading ? (
                   <span className={styles.spinner}></span>
                 ) : (
                   "Sign in"
@@ -144,13 +135,5 @@ function LoginFormInner() {
         </div>
       </div>
     </main>
-  );
-}
-
-export default function LoginForm() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <LoginFormInner />
-    </QueryClientProvider>
   );
 }

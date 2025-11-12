@@ -1,14 +1,11 @@
 "use client";
 
-import React from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { toast } from "react-toastify";
-import styles from "./registerPage.module.css";
 import { registerWithEmail } from "./registerService/registerService";
+import styles from "./registerPage.module.css";
 
-type FormData = {
+type RegisterFormData = {
   name: string;
   email: string;
   password: string;
@@ -16,29 +13,39 @@ type FormData = {
 
 export default function Register() {
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>();
-  const [showPassword, setShowPassword] = React.useState(false);
-  
-  const onSubmit: SubmitHandler<FormData> = async (data) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const form = e.currentTarget;
+    const domFormData = new FormData(form); // DOM FormData
+    const payload: RegisterFormData = {
+      name: domFormData.get("name") as string,
+      email: domFormData.get("email") as string,
+      password: domFormData.get("password") as string,
+    };
+
     try {
-      await registerWithEmail({ name: data.name, email: data.email, password: data.password });
-      toast.success("Account created successfully");
-      router.replace("/login");
+      await registerWithEmail(payload);
+      // redirigir a la sección de usuarios
+      router.push("/user");
     } catch (err: unknown) {
       // extraer mensaje de forma segura sin usar `any`
-      const getMessage = (e: unknown): string | undefined => {
-        if (typeof e !== "object" || e === null) return undefined;
-        const obj = e as Record<string, unknown>;
-        const resp = obj.response as Record<string, unknown> | undefined;
-        const data = resp?.data as Record<string, unknown> | undefined;
-        if (typeof data?.detail === "string") return data.detail;
-        if (typeof obj.message === "string") return obj.message;
-        return undefined;
-      };
-      const finalMsg = getMessage(err) ?? "Registration error";
-      toast.error(finalMsg);
+      const detail =
+        typeof err === "object" && err !== null && "response" in err
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (err as any).response?.data?.detail
+          : undefined;
+      const message = detail ?? (err instanceof Error ? err.message : String(err));
+      setError(message || "Error al registrar");
+    } finally {
+      setLoading(false);
     }
-  };
+  }
 
   return (
     <main className={styles.page}>
@@ -77,85 +84,47 @@ export default function Register() {
             <h2 className={styles.formTitle}>Create account</h2>
             <p className={styles.formSubtitle}>Sign up to start managing your projects</p>
 
-            <form onSubmit={handleSubmit(onSubmit)} noValidate className={styles.form}>
+            <form onSubmit={onSubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="name">Full name</label>
                 <input
                   id="name"
+                  name="name"
                   className={styles.input}
                   placeholder="Your name"
-                  {...register("name", { required: "Name is required" })}
-                  aria-invalid={!!errors.name}
+                  required
                 />
-                {errors.name && <span className={styles.fieldError}>{errors.name.message}</span>}
               </div>
 
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="email">Email address</label>
                 <input
                   id="email"
+                  name="email"
                   className={styles.input}
                   type="email"
                   placeholder="you@example.com"
-                  {...register("email", { required: "Email is required" })}
-                  aria-invalid={!!errors.email}
+                  required
                 />
-                {errors.email && <span className={styles.fieldError}>{errors.email.message}</span>}
               </div>
 
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="password">Password</label>
-                <div className={styles.passwordWrapper}>
-                  <input
-                    id="password"
-                    className={styles.input}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    {...register("password", {
-                      required: "Password is required",
-                      minLength: { value: 6, message: "Minimum 6 characters" },
-                      validate: (v: string) => {
-                        const bytes = new TextEncoder().encode(v).length;
-                        return bytes <= 72 || "Password too long (max 72 bytes)";
-                      }
-                    })}
-                    aria-invalid={!!errors.password}
-                    aria-describedby={errors.password ? "password-error" : undefined}
-                  />
-                  <button
-                    type="button"
-                    className={styles.passwordToggle}
-                    onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    aria-pressed={showPassword}
-                  >
-                    {showPassword ? (
-                      /* eye-off icon */
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                        <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M10.58 10.58A3 3 0 0113.42 13.42" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M9.88 5.94A15.72 15.72 0 0121 12c-1.21 2.1-3.05 3.85-5.2 4.95" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M14.12 18.06A15.72 15.72 0 013 12c1.21-2.1 3.05-3.85 5.2-4.95" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    ) : (
-                      /* eye icon */
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </button>
-                </div>
-                {errors.password && <span id="password-error" className={styles.fieldError}>{errors.password.message}</span>}
+                <input
+                  id="password"
+                  name="password"
+                  className={styles.input}
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                />
               </div>
 
-              <button type="submit" className={styles.submitButton} disabled={isSubmitting} aria-busy={isSubmitting}>
-                {isSubmitting ? <span className={styles.spinner}></span> : "Create account"}
+              <button type="submit" className={styles.submitButton} disabled={loading}>
+                {loading ? "Registrando..." : "Registrarse"}
               </button>
 
-              <div className={styles.signupPrompt}>
-                Already have an account? <Link href="/login" className={styles.signupLink}>Sign in</Link>
-              </div>
+              {error && <p role="alert" className={styles.errorMessage}>{error}</p>}
             </form>
           </div>
         </div>

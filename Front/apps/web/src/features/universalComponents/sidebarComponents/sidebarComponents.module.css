@@ -1,0 +1,140 @@
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: linear-gradient(180deg,#ffffff,#fbfdff);
+  border-right: 1px solid rgba(15,23,42,0.04);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100vh;
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+}
+
+.collapsed {
+  width: 64px;
+  min-width: 64px;
+}
+
+.header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.brand {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.logo {
+  width:34px;
+  height:34px;
+  border-radius:8px;
+  background:linear-gradient(135deg,#7c3aed,#06b6d4);
+  color:white;
+  display:inline-grid;
+  place-items:center;
+  font-weight:700;
+  font-size:0.95rem;
+}
+
+.title {
+  font-weight:700;
+  color:#0f172a;
+  font-size:1rem;
+}
+
+.collapseBtn {
+  background:transparent;
+  border:0;
+  cursor:pointer;
+  font-size:14px;
+  padding:6px;
+  border-radius:8px;
+}
+
+.nav {
+  flex:1;
+  overflow:auto;
+}
+
+.nav ul {
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.link {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px;
+  border-radius:8px;
+  color:#0f172a;
+  text-decoration:none;
+  transition:background .12s ease, color .12s ease;
+}
+
+.link:hover {
+  background: rgba(99,102,241,0.06);
+}
+
+.icon {
+  width:28px;
+  height:28px;
+  display:inline-grid;
+  place-items:center;
+  color:#374151;
+}
+
+.label {
+  font-size:0.95rem;
+}
+
+.active {
+  background: linear-gradient(90deg, rgba(99,102,241,0.12), rgba(99,102,241,0.06));
+  color: #111827;
+  font-weight: 600;
+}
+
+.footer {
+  padding-top:8px;
+  border-top:1px solid rgba(15,23,42,0.03);
+  display:flex;
+  align-items:center;
+  gap:8px;
+  justify-content:space-between;
+}
+
+.smallBtn {
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid rgba(15,23,42,0.04);
+  background:white;
+  cursor:pointer;
+}
+
+.help {
+  color:#94a3b8;
+  font-size:0.85rem;
+}
+
+/* responsive: en mobile el sidebar puede comportarse como overlay (ajusta en layout) */
+@media (max-width: 820px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 999;
+    transform: translateX(0);
+  }
+}

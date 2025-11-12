@@ -1,0 +1,207 @@
+/* ...existing code... */
+.container {
+  padding: 1.25rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial;
+  color: #0f172a;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.subtitle {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.search {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  min-width: 220px;
+  font-size: 0.95rem;
+  outline: none;
+}
+.search:focus {
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.08);
+  border-color: #6366f1;
+}
+
+/* grid/card styles (se usan si necesitas list view además de la tabla) */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #eef2ff;
+  box-shadow: 0 1px 2px rgba(2,6,23,0.04);
+}
+
+/* avatar base y variantes */
+.avatar {
+  border-radius: 9999px;
+  display: inline-grid;
+  place-items: center;
+  background: linear-gradient(135deg,#7c3aed,#06b6d4);
+  color: white;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.avatarSmall {
+  width: 48px;
+  height: 48px;
+  font-size: 14px;
+}
+
+.avatarLarge {
+  width: 72px;
+  height: 72px;
+  font-size: 20px;
+}
+
+/* nombre / email / meta */
+.name {
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+.nameTruncated {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nameWrap {
+  min-width: 0;
+}
+
+.email {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+.emailSmall {
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* modal header inside render */
+.modalHeader {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.modalName {
+  margin: 0;
+  font-weight: 600;
+}
+
+.modalEmail {
+  margin: 0;
+  color: #64748b;
+}
+
+.modalCreated {
+  margin-top: 6px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* meta, actions, buttons, footer remain */
+.meta {
+  margin-top: 6px;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.btn {
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  background: #0ea5a8;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.btnGhost {
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  background: transparent;
+  color: #475569;
+  border: 1px solid #e6eef6;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.footer {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* pagination removed from this file (usar componente universal) */
+
+.center {
+  text-align: center;
+  padding: 1rem 0;
+  color: #475569;
+}
+
+.error {
+  color: #b91c1c;
+  margin: 0.5rem 0;
+}

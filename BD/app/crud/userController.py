@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.userSchema import UserCreate, UserUpdate, UserInDB
@@ -59,6 +59,9 @@ class CRUDUser:
         if not verify_password(password, hashed):
             return None
         return user
+
+    def get_multi(self, db: Session, skip: int = 0, limit: int = 100) -> List[User]:
+        return db.query(User).offset(skip).limit(limit).all()
 
 # instancia exportada para importar como user_crud
 user_crud = CRUDUser()
