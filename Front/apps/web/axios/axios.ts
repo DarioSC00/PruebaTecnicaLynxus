@@ -1,11 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: false, // true solo si usas cookies/credenciales
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true, // <- importante para cookies
+  timeout: 10000,
 });
 
 export default api;

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import api from "../../../axios/axios";
-import DetalModal from "../universalComponents/detailUniversalComponents/detalModal";
+import DetalModal from "../universalComponents/detailUniversalComponents/detailModal";
 import styles from "./userPage.module.css";
 
 type UserDetail = {

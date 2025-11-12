@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import api from "../../../axios/axios";
 import Link from "next/link";
 import styles from "./userPage.module.css";
-import DetalModal from "../universalComponents/detailUniversalComponents/detalModal";
+import DetalModal from "../universalComponents/detailUniversalComponents/detailModal";
 import TableUniversal, { Column } from "../universalComponents/tableUniversalComponents/tableUniversal";
 
 type UserItem = {

@@ -10,7 +10,10 @@ type NavItem = { href: string; label: string; icon?: React.ReactNode };
 const DEFAULT_NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="3" y="3" width="8" height="8" rx="1" fill="currentColor"/></svg>) },
   { href: "/user", label: "Usuarios", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><circle cx="12" cy="8" r="3" fill="currentColor"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>) },
-  { href: "/projects", label: "Proyectos", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="3" y="4" width="18" height="6" rx="1" fill="currentColor"/><rect x="3" y="14" width="9" height="6" rx="1" fill="currentColor"/></svg>) },
+  // Entry para la lista de proyectos
+  { href: "/project", label: "Proyectos", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="3" y="4" width="18" height="6" rx="1" fill="currentColor"/><rect x="3" y="14" width="9" height="6" rx="1" fill="currentColor"/></svg>) },
+  // Opcional: acceso directo para crear nuevo proyecto
+  { href: "/project/new", label: "Nuevo proyecto", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
   { href: "/tasks", label: "Tareas", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
 ];
 
@@ -45,6 +48,7 @@ export default function SidebarComponent({ items = DEFAULT_NAV, defaultCollapsed
       <nav className={styles.nav} role="navigation" aria-label="Navegación principal">
         <ul>
           {items.map((n) => {
+            // active cuando la ruta actual es exactamente la href o comienza con href + '/'
             const active = pathname === n.href || pathname.startsWith(n.href + "/");
             return (
               <li key={n.href}>
