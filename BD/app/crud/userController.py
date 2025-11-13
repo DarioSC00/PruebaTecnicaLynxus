@@ -1,67 +1,44 @@
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
 from app.models.user import User
-from app.schemas.userSchema import UserCreate, UserUpdate, UserInDB
-from app.core.security import hash_password, verify_password
+from app.schemas.userSchema import UserCreate, UserUpdate
+from app.core.security import get_password_hash, verify_password
 
-class CRUDUser:
+class UserCRUD:
     def get(self, db: Session, id: int) -> Optional[User]:
         return db.query(User).filter(User.id == id).first()
 
     def get_by_email(self, db: Session, email: str) -> Optional[User]:
         return db.query(User).filter(User.email == email).first()
 
-    def _password_field_name(self) -> str:
-        # detectar nombre del campo de password en el modelo
-        cols = set(User.__table__.columns.keys())
-        for candidate in ("password_hash", "hashed_password", "password"):
-            if candidate in cols:
-                return candidate
-        # fallback razonable
-        return "password_hash"
-
-    def create(self, db: Session, obj_in: UserCreate) -> User:
-        data: Dict[str, Any] = obj_in.dict()
-        # extraer contraseña en claro si viene
-        plain = data.pop("password", None)
-        if plain is not None:
-            target = self._password_field_name()
-            hashed = hash_password(plain)
-            data[target] = hashed
-
-        db_obj = User(**data)
-        db.add(db_obj)
+    def create(self, db: Session, user: UserCreate) -> User:
+        db_user = User(
+            email=user.email,
+            name=user.name,
+            password_hash=get_password_hash(user.password),  # Sin hash real, solo guarda texto plano
+            is_active=True
+        )
+        db.add(db_user)
         db.commit()
-        db.refresh(db_obj)
-        return db_obj
+        db.refresh(db_user)
+        return db_user
 
-    def update(self, db: Session, db_obj: User, obj_in: UserUpdate) -> User:
-        update_data: Dict[str, Any] = obj_in.dict(exclude_unset=True)
-        if "password" in update_data and update_data["password"]:
-            target = self._password_field_name()
-            update_data[target] = hash_password(update_data.pop("password"))
-        for field, value in update_data.items():
-            setattr(db_obj, field, value)
-        db.add(db_obj)
+    def update(self, db: Session, db_user: User, user_update: UserUpdate) -> User:
+        if user_update.name is not None:
+            db_user.name = user_update.name
+        if user_update.email is not None:
+            db_user.email = user_update.email
+        if user_update.password is not None:
+            db_user.password_hash = get_password_hash(user_update.password)  # Sin hash real
         db.commit()
-        db.refresh(db_obj)
-        return db_obj
+        db.refresh(db_user)
+        return db_user
 
-    def authenticate(self, db: Session, email: str, password: str) -> Optional[User]:
-        user = self.get_by_email(db, email=email)
-        if not user:
-            return None
-        # obtener el campo real donde está el hash
-        pwd_field = self._password_field_name()
-        hashed = getattr(user, pwd_field, None)
-        if not hashed:
-            return None
-        if not verify_password(password, hashed):
-            return None
-        return user
+    def delete(self, db: Session, id: int):
+        db_user = self.get(db, id)
+        if db_user:
+            db.delete(db_user)
+            db.commit()
+        return db_user
 
-    def get_multi(self, db: Session, skip: int = 0, limit: int = 100) -> List[User]:
-        return db.query(User).offset(skip).limit(limit).all()
-
-# instancia exportada para importar como user_crud
-user_crud = CRUDUser()
+user_crud = UserCRUD()

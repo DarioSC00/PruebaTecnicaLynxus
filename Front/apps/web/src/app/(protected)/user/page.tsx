@@ -1,4 +1,4 @@
-import User from "../../features/userComponents/userComponents";
+import User from "../../../features/userComponents/userComponents";
 
 export default function UserPage() {
   return (

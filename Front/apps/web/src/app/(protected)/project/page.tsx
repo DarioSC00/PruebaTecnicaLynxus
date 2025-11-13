@@ -1,9 +1,11 @@
 import React from "react";
-import ProjectList from "../../features/projectComponents/projectComponent";
+import ProjectList from "../../../features/projectComponents/projectComponent";
 
-export const metadata = { title: "Proyectos" };
+export const metadata = {
+  title: "Proyectos",
+};
 
-export default function ProjectsPage() {
+export default function ProjectPage() {
   return (
     <main style={{ padding: 16 }}>
       <h1 style={{ margin: 0, marginBottom: 12 }}>Proyectos</h1>

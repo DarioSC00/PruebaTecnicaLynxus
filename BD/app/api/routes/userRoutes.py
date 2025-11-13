@@ -1,12 +1,74 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Path, Query, Body
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
+from datetime import timedelta
+from pydantic import BaseModel, EmailStr
+
 from app.api.dependencies import get_db
 from app.crud.userController import user_crud
 from app.models.user import User
+from app.core.security import verify_password, create_access_token
+from app.core.config import settings
 
 router = APIRouter()
+
+# Schema para login
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+# POST /users/login - Ruta de autenticación
+@router.post("/login", status_code=status.HTTP_200_OK)
+def login(
+    credentials: LoginRequest,
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.email == credentials.email).first()
+    
+    if not user:
+        print(f"❌ Usuario no encontrado: {credentials.email}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales incorrectas"
+        )
+    
+    print(f"✅ Usuario encontrado: {user.email}")
+    print(f"🔑 Password ingresada: {credentials.password}")
+    print(f"🔑 Password en BD: {user.password_hash}")
+    
+    # Verificar si el usuario está activo
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuario inactivo"
+        )
+    
+    # Verificar contraseña (usar password_hash en vez de hashed_password)
+    if not verify_password(credentials.password, user.password_hash):
+        print("❌ Contraseñas NO coinciden")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales incorrectas"
+        )
+    
+    print("✅ Login exitoso")
+    
+    # Token expira en 60 minutos
+    access_token = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=timedelta(minutes=60)
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+        }
+    }
 
 # GET /users?page=1&page_size=10&q=
 @router.get("/", status_code=status.HTTP_200_OK)

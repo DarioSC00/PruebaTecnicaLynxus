@@ -1,5 +1,4 @@
 import api from "../../../../axios/axios";
-import axios from "axios";
 
 export type User = {
   id: number;
@@ -10,6 +9,7 @@ export type User = {
 
 export type LoginResponse = {
   access_token: string;
+  token_type: string;
   user: User;
 };
 
@@ -19,13 +19,7 @@ export type LoginPayload = {
 };
 
 export async function loginWithEmail(payload: LoginPayload): Promise<LoginResponse> {
-  try {
-    const res = await api.post("/users/login/email", payload);
-    return res.data as LoginResponse;
-  } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      throw err.response?.data ?? err;
-    }
-    throw err;
-  }
+  // Enviar como JSON (no form data)
+  const response = await api.post<LoginResponse>("/users/login", payload);
+  return response.data;
 }

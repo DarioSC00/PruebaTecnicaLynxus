@@ -5,49 +5,33 @@ import { useRouter } from "next/navigation";
 import { loginWithEmail } from "./loginService/loginService";
 import styles from "./loginPage.module.css";
 import Link from "next/link";
-import { toast } from "react-toastify";
 
-export default function Login() {
+export default function LoginPage() {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError("");
     setLoading(true);
 
-    const form = e.currentTarget;
-    const fd = new FormData(form);
-    const payload = {
-      email: fd.get("email") as string,
-      password: fd.get("password") as string,
-    };
-
     try {
-      const res = await loginWithEmail(payload);
-      // si devuelves token en res.access_token guárdalo aquí (localStorage / cookie)
-      if (res?.access_token) {
-        localStorage.setItem("token", res.access_token);
-      }
-      router.push("/user");
+      const response = await loginWithEmail({ email, password });
+
+      // Guardar token
+      localStorage.setItem("access_token", response.access_token);
+
+      // Redirigir a la vista protegida
+      router.push("/project");
     } catch (err: unknown) {
-      // extraer mensaje de forma segura sin usar `any`
-      let message = "Error al iniciar sesión";
-      if (typeof err === "object" && err !== null) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const maybeAny = err as any;
-        message = maybeAny?.response?.data?.detail ?? maybeAny?.message ?? message;
-      } else if (err instanceof Error) {
-        message = err.message;
-      } else {
-        message = String(err);
-      }
-      setError(message);
+      setError(err instanceof Error ? err.message : "Error al iniciar sesión");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <main className={styles.page}>
@@ -94,7 +78,7 @@ export default function Login() {
               </div>
             )}
 
-            <form onSubmit={onSubmit} className={styles.form}>
+            <form onSubmit={handleLogin} className={styles.form}>
               <div className={styles.formGroup}>
                 <label className={styles.label} htmlFor="email">Email address</label>
                 <input
@@ -103,6 +87,8 @@ export default function Login() {
                   className={styles.input}
                   type="email"
                   placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -115,6 +101,8 @@ export default function Login() {
                   className={styles.input}
                   type="password"
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
