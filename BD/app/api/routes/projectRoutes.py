@@ -1,17 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
 from sqlalchemy.orm import Session
-from typing import List
+from datetime import datetime
 
-# Database
 from app.core.database import get_db
-
-# CRUD operations
-from app.crud import projectController as project_crud
-
-# Schemas
+from app.crud.projectController import project_crud
 from app.schemas.projectSchema import ProjectCreate, ProjectResponse, ProjectUpdate  
-
-# Authentication
 from app.api.dependencies import get_current_active_user  
 from app.models.user import User
 
@@ -25,19 +19,28 @@ def create_project(
     current_user: User = Depends(get_current_active_user)
 ):
     """Crear un nuevo proyecto"""
-    project = project_crud.create(
-        db=db,
-        obj_in=project_in,
-        owner_id=current_user.id
-    )
-    return project
+    try:
+        project = project_crud.create(
+            db=db,
+            obj_in=project_in,
+            owner_id=current_user.id
+        )
+        return project
+    except Exception as e:
+        print(f"❌ Error creando proyecto: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al crear proyecto: {str(e)}"
+        )
 
 
 @router.get("/", response_model=List[ProjectResponse])
 def get_projects(
-    skip: int = 0,
-    limit: int = 100,
-    search: str = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=200),
+    search: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -62,15 +65,13 @@ def get_project(
     project = project_crud.get_by_id(
         db=db, 
         project_id=project_id, 
-        owner_id=current_user.id  # ✅ agregado
+        owner_id=current_user.id
     )
-
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Proyecto no encontrado"
         )
-
     return project
 
 
@@ -86,15 +87,13 @@ def update_project(
         db=db,
         project_id=project_id,
         obj_in=project_in,
-        owner_id=current_user.id  # ✅ agregado
+        owner_id=current_user.id
     )
-
     if not updated_project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Proyecto no encontrado"
         )
-
     return updated_project
 
 
@@ -108,15 +107,13 @@ def delete_project(
     success = project_crud.delete(
         db=db, 
         project_id=project_id, 
-        owner_id=current_user.id  # ✅ agregado
+        owner_id=current_user.id
     )
-
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Proyecto no encontrado"
         )
-
     return {"message": "Proyecto eliminado correctamente"}
 
 

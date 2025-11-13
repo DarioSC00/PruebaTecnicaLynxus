@@ -19,13 +19,13 @@
   }
 }
 
-html, body {
+html, body, #__next {
+  height: 100%;
+  background: #ffffff; /* fondo blanco global */
+  color: #111;
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
-  background: #667eea; /* color base que coincide con el gradiente */
-  overflow-x: hidden;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
 
 /* Ocultar scrollbar pero mantener funcionalidad */

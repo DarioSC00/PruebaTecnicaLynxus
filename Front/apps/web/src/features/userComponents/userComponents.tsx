@@ -1,195 +1,99 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import api from "../../../axios/axios";
-import Link from "next/link";
+import React, { useEffect, useState } from "react";
+import TableUniversal from "../universalComponents/tableUniversalComponents/tableUniversal";
+import UserDetail from "./userDetail";
+import * as userService from "./userService/userService";
 import styles from "./userPage.module.css";
-import DetalModal from "../universalComponents/detailUniversalComponents/detailModal";
-import TableUniversal, { Column } from "../universalComponents/tableUniversalComponents/tableUniversal";
 
-type UserItem = {
-  id: number;
-  name?: string | null;
-  email: string;
-  created_at?: string | null;
-};
-
-type UserDetail = {
-  id: number;
-  name?: string | null;
-  email: string;
-  created_at?: string | null;
-};
-
-export default function User() {
-  const [users, setUsers] = useState<UserItem[]>([]);
+export default function UserList() {
+  const [users, setUsers] = useState<userService.UserItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const pageSize = 8;
-
-  // modal / detalle
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalLoading, setModalLoading] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
-  const [selectedUser, setSelectedUser] = useState<UserDetail | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    async function fetchUsers() {
-      setLoading(true);
-      setError(null);
+    React.startTransition(() => setLoading(true));
+    (async () => {
       try {
-        const res = await api.get("/users", {
-          params: { page, page_size: pageSize, q: query || undefined },
-        });
+        const res = await userService.listUsers({ q: query, page: 1, page_size: 50 });
         if (!mounted) return;
-        const data = res.data;
-        setUsers(data.items || []);
-        setTotal(typeof data.total === "number" ? data.total : (data.items || []).length);
+        React.startTransition(() => setUsers(res.items));
       } catch (err) {
-        setError("No se pudieron cargar los usuarios desde la API.");
-        setUsers([]);
-        setTotal(0);
+        console.error("❌ listUsers error:", err);
+        if (mounted) React.startTransition(() => setUsers([]));
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) React.startTransition(() => setLoading(false));
       }
-    }
-    fetchUsers();
-    return () => {
-      mounted = false;
-    };
-  }, [page, query]);
+    })();
+    return () => { mounted = false; };
+  }, [query, reloadKey]);
 
-  function initials(name?: string | null) {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((p) => p[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-  }
-
-  async function openUserModal(id: number) {
-    setModalOpen(true);
-    setModalLoading(true);
-    setModalError(null);
-    setSelectedUser(null);
-    try {
-      const res = await api.get(`/users/${id}`);
-      setSelectedUser(res.data as UserDetail);
-    } catch (err) {
-      setModalError("No se pudo cargar el detalle del usuario.");
-    } finally {
-      setModalLoading(false);
-    }
-  }
-
-  function closeModal() {
-    setModalOpen(false);
-    setSelectedUser(null);
-    setModalError(null);
-    setModalLoading(false);
-  }
-
-  const columns: Column<UserItem>[] = useMemo(
-    () => [
-      {
-        id: "name",
-        header: "Nombre",
-        accessor: (u) => (
-          <div className={styles.rowUser}>
-            <div className={`${styles.avatar} ${styles.avatarSmall}`}>{initials(u.name)}</div>
-            <div className={styles.nameWrap}>
-              <div className={`${styles.name} ${styles.nameTruncated}`}>{u.name ?? "Usuario"}</div>
-              <div className={styles.emailSmall}>{u.email}</div>
-            </div>
-          </div>
-        ),
-        width: "45%",
-      },
-      {
-        id: "email",
-        header: "Email",
-        accessor: "email",
-        width: "35%",
-      },
-      {
-        id: "created_at",
-        header: "Creado",
-        accessor: (u) => (u.created_at ? new Date(u.created_at).toLocaleDateString() : "-"),
-        width: "20%",
-        align: "right",
-      },
-    ],
-    []
-  );
+  const columns = [
+    { id: "name", header: "Nombre", accessor: "name" as keyof userService.UserItem },
+    { id: "email", header: "Email", accessor: "email" as keyof userService.UserItem },
+    { id: "created_at", header: "Registrado", accessor: (i: userService.UserItem) => i.created_at ?? "-" },
+  ];
 
   return (
-    <section className={styles.container}>
-      <header className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Usuarios</h2>
-          <p className={styles.subtitle}>Gestiona los usuarios de la aplicación</p>
-        </div>
-        <div className={styles.controls}>
+    <div className={styles.pageContainer}>
+      <header className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>Usuarios</h1>
+        <div className={styles.pageActions}>
           <input
-            aria-label="Buscar usuarios"
-            placeholder="Buscar por nombre o email..."
+            className={styles.searchInput}
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1);
-            }}
-            className={styles.search}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar usuarios..."
           />
+          <button 
+            className={styles.btnSecondary}
+            onClick={() => setReloadKey(k => k + 1)}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+            Recargar
+          </button>
         </div>
       </header>
 
-      {error && <p className={styles.error}>{error}</p>}
-
-      <TableUniversal
-        columns={columns}
-        data={users}
-        loading={loading}
-        emptyMessage="No hay usuarios."
-        rowKey={(u) => u.id}
-        actions={(u) => (
-          <div className={styles.actions}>
-            <button className={styles.btn} onClick={() => openUserModal(u.id)}>Ver</button>
+      <div className={styles.pageContent}>
+        {loading && <p className={styles.emptyState}>Cargando usuarios...</p>}
+        {!loading && users.length === 0 && (
+          <div className={styles.emptyState}>
+            <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <p>No hay usuarios registrados</p>
+            <small>Los usuarios se crean mediante el formulario de registro</small>
           </div>
         )}
-      />
+        {!loading && users.length > 0 && (
+          <TableUniversal<userService.UserItem>
+            columns={columns}
+            data={users}
+            loading={loading}
+            rowKey={(u) => u.id}
+            onRowClick={(u) => { setSelectedId(u.id); setOpen(true); }}
+            actions={(u) => (
+              <button
+                className={styles.btn}
+                onClick={(e) => { e.stopPropagation(); setSelectedId(u.id); setOpen(true); }}
+              >
+                Ver detalles
+              </button>
+            )}
+          />
+        )}
+      </div>
 
-      <DetalModal
-        open={modalOpen}
-        onClose={closeModal}
-        title={selectedUser?.name ?? "Detalle usuario"}
-        data={selectedUser}
-        render={(data) => {
-          if (modalLoading) return <p className={styles.center}>Cargando…</p>;
-          if (modalError) return <p className={styles.error}>{modalError}</p>;
-          if (!data) return <p className={styles.meta}>Sin datos</p>;
-
-          return (
-            <div>
-              <div className={styles.modalHeader}>
-                <div className={`${styles.avatar} ${styles.avatarLarge}`}>{initials((data as UserDetail).name)}</div>
-                <div>
-                  <p className={styles.modalName}>{(data as UserDetail).name}</p>
-                  <p className={styles.modalEmail}>{(data as UserDetail).email}</p>
-                  <p className={styles.modalCreated}>
-                    Creado: {(data as UserDetail).created_at ? new Date((data as UserDetail).created_at!).toLocaleString() : "-"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          );
-        }}
-      />
-    </section>
+      <UserDetail userId={selectedId} open={open} onClose={() => { setOpen(false); setSelectedId(null); }} />
+    </div>
   );
 }

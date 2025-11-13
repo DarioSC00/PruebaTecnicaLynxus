@@ -1,109 +1,83 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import TableUniversal, { Column } from "../universalComponents/tableUniversalComponents/tableUniversal";
-import ProjectDetail from "./detailProject";
-import styles from "./projectPage.module.css";
-import * as projectService from "./projectService/projectService";
+import React, { useEffect, useState } from "react";
+import TableUniversal from "../universalComponents/tableUniversalComponents/tableUniversal";
 import ProjectCreateComponent from "./projectCreateComponent";
-
-type ProjectItem = projectService.ProjectItem;
+import ProjectDetail from "./detailProject";
+import * as projectService from "./projectService/projectService";
+import styles from "./projectPage.module.css";
 
 export default function ProjectList() {
-  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [projects, setProjects] = useState<projectService.ProjectItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0); // se incrementa cuando se crea un proyecto
 
   useEffect(() => {
     let mounted = true;
     React.startTransition(() => setLoading(true));
-
-    async function load() {
+    (async () => {
       try {
-        const { items } = await projectService.listProjects({ q: query, page: 1, page_size: 50 });
+        const res = await projectService.listProjects({ q: query, page: 1, page_size: 50 });
         if (!mounted) return;
-        setProjects(items ?? []);
-      } catch {
-        if (!mounted) return;
-        setProjects([]);
+        React.startTransition(() => setProjects(res.items));
+        console.log("✅ listProjects response:", res);
+      } catch (err) {
+        console.error("❌ listProjects error:", err);
+        if (mounted) React.startTransition(() => setProjects([]));
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) React.startTransition(() => setLoading(false));
       }
-    }
+    })();
+    return () => { mounted = false; };
+  }, [query, reloadKey]);
 
-    load();
-    return () => {
-      mounted = false;
-    };
-  }, [query, reloadKey]); // re-ejecuta cuando reloadKey cambia
-
-  const columns: Column<ProjectItem>[] = useMemo(
-    () => [
-      {
-        id: "name",
-        header: "Proyecto",
-        accessor: (p) => (
-          <div className={styles.projectCell}>
-            <div className={styles.projectName}>{p.name}</div>
-            <div className={styles.projectOwner}>{p.owner}</div>
-          </div>
-        ),
-        width: "50%",
-      },
-      {
-        id: "status",
-        header: "Estado",
-        accessor: "status",
-        width: "20%",
-      },
-      {
-        id: "created_at",
-        header: "Creado",
-        accessor: (p) => (p.created_at ? new Date(p.created_at).toLocaleDateString() : "-"),
-        width: "20%",
-        align: "right",
-      },
-    ],
-    []
-  );
+  const columns = [
+    { id: "name", header: "Nombre", accessor: "name" as keyof projectService.ProjectItem },
+    { id: "description", header: "Descripción", accessor: (i: projectService.ProjectItem) => i.description ?? "-" },
+    { id: "created_at", header: "Creado", accessor: (i: projectService.ProjectItem) => i.created_at ?? "-" },
+  ];
 
   return (
-    <section className={styles.container}>
-      <header className={styles.header}>
-        <h2>Proyectos</h2>
-        <div className={styles.controls}>
+    <div className={styles.pageContainer}>
+      <header className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>Proyectos</h1>
+        <div className={styles.pageActions}>
           <input
-            className={styles.search}
+            className={styles.searchInput}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar proyectos..."
           />
-
-          <ProjectCreateComponent
-            defaultOpen={false}
-            onCreated={() => setReloadKey(prev => prev + 1)}
-          />
+          <ProjectCreateComponent defaultOpen={false} onCreated={() => setReloadKey(k => k + 1)} />
         </div>
       </header>
 
-      <TableUniversal
-        columns={columns}
-        data={projects}
-        loading={loading}
-        rowKey={(p) => p.id}
-        actions={(p) => (
-          <div>
-            <button className={styles.btn} onClick={() => { setSelectedId(p.id); setOpen(true); }}>
-              Ver
-            </button>
-          </div>
+      <div className={styles.pageContent}>
+        {loading && <p>Cargando proyectos...</p>}
+        {!loading && projects.length === 0 && <p>No hay proyectos</p>}
+        {!loading && projects.length > 0 && (
+          <TableUniversal<projectService.ProjectItem>
+            columns={columns}
+            data={projects}
+            loading={loading}
+            rowKey={(p) => p.id}
+            onRowClick={(p) => { setSelectedId(p.id); setOpen(true); }}
+            actions={(p) => (
+              <button
+                className={styles.btn}
+                onClick={(e) => { e.stopPropagation(); setSelectedId(p.id); setOpen(true); }}
+              >
+                Ver
+              </button>
+            )}
+          />
         )}
-      />
+      </div>
 
       <ProjectDetail projectId={selectedId} open={open} onClose={() => { setOpen(false); setSelectedId(null); }} />
-    </section>
+    </div>
   );
 }

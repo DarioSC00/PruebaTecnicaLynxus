@@ -1,59 +1,49 @@
 import api from "../../../../axios/axios";
 import axios from "axios";
 
-export type LoginResponse = {
-  access_token?: string;
-  token_type?: string;
-  user?: Record<string, unknown>;
+export type UserItem = {
+  id: number;
+  name: string;
+  email: string;
+  created_at?: string;
 };
 
-export async function loginWithEmail(email: string, password: string): Promise<LoginResponse> {
+export type UserDetail = UserItem & {
+  projects?: Array<{ 
+    id: number; 
+    name: string; 
+    description?: string; 
+  }>;
+  tasks?: Array<{ 
+    id: number; 
+    title: string; 
+    status: 'todo' | 'doing' | 'done'; 
+    priority: 'low' | 'med' | 'high';
+  }>;
+};
+
+export type ListUsersParams = { q?: string; page?: number; page_size?: number };
+export type ListUsersResponse = { items: UserItem[]; total?: number };
+
+export async function listUsers(params: ListUsersParams = {}): Promise<ListUsersResponse> {
   try {
-    const res = await api.post("/users/login/email", { email, password });
-    const data = res.data as LoginResponse;
-
-    // opcional: guardar token en localStorage (sin setAuthToken)
-    if (typeof window !== "undefined" && data?.access_token) {
-      localStorage.setItem("token", data.access_token);
-    }
-
-    return data;
+    const { q = "", page = 1, page_size = 50 } = params;
+    const skip = (page - 1) * page_size;
+    const res = await api.get("/users", { params: { skip, limit: page_size, search: q } });
+    return { 
+      items: Array.isArray(res.data) ? res.data : [], 
+      total: Array.isArray(res.data) ? res.data.length : 0 
+    };
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
+      console.error("listUsers error:", err.response?.data ?? err);
       throw err.response?.data ?? err;
     }
     throw err;
   }
 }
 
-export function logout() {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("token");
-  }
-}
-
-export async function getUsers(skip = 0, limit = 20, search?: string): Promise<Record<string, unknown>[]> {
-  try {
-    const params: Record<string, string | number> = { skip, limit };
-    if (search) params.search = search;
-    const res = await api.get("/users", { params });
-    return res.data as Record<string, unknown>[];
-  } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      throw err.response?.data ?? err;
-    }
-    throw err;
-  }
-}
-
-export async function getUserById(userId: string | number): Promise<Record<string, unknown>> {
-  try {
-    const res = await api.get(`/users/${userId}`);
-    return res.data as Record<string, unknown>;
-  } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      throw err.response?.data ?? err;
-    }
-    throw err;
-  }
+export async function getUser(id: number): Promise<UserDetail> {
+  const res = await api.get(`/users/${id}`);
+  return res.data;
 }

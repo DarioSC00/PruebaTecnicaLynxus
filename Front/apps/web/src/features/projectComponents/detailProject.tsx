@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import DetalModal from "../universalComponents/detailUniversalComponents/detailModal";
 import styles from "./projectPage.module.css";
@@ -14,46 +13,28 @@ export default function ProjectDetail({ projectId, open, onClose }: { projectId:
 
   useEffect(() => {
     let mounted = true;
-
     if (!open || projectId == null) {
-      // reset visual state si se cierra o no hay id
-      setData(null);
-      setError(null);
-      setLoading(false);
+      if (mounted) { setData(null); setError(null); setLoading(false); }
       return;
     }
-
-    // fijar el id en una constante no nula para que TS lo infiera como number
-    const id = projectId as number;
-
     React.startTransition(() => setLoading(true));
-
-    async function load(projectIdFixed: number) {
+    (async () => {
       try {
-        const d = await projectService.getProject(projectIdFixed);
+        const d = await projectService.getProject(projectId);
         if (!mounted) return;
-        setData(d);
-      } catch {
+        React.startTransition(() => setData(d));
+      } catch (e) {
         if (!mounted) return;
         setError("No se pudo cargar proyecto");
-        setData(null);
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) React.startTransition(() => setLoading(false));
       }
-    }
-
-    load(id);
-    return () => {
-      mounted = false;
-    };
+    })();
+    return () => { mounted = false; };
   }, [open, projectId]);
 
   return (
-    <DetalModal
-      open={open}
-      onClose={onClose}
-      title={data?.name ?? "Detalle proyecto"}
-      data={data}
+    <DetalModal open={open} onClose={onClose} title={data?.name ?? "Detalle proyecto"} data={data}
       render={(d) => {
         if (loading) return <p className={styles.center}>Cargando…</p>;
         if (error) return <p className={styles.error}>{error}</p>;
@@ -64,10 +45,6 @@ export default function ProjectDetail({ projectId, open, onClose }: { projectId:
             <div className={styles.keyValue}>
               <div className={styles.key}>Propietario</div>
               <div className={styles.value}>{d.owner ?? "-"}</div>
-              <div className={styles.key}>Estado</div>
-              <div className={styles.value}>{d.status ?? "-"}</div>
-              <div className={styles.key}>Creado</div>
-              <div className={styles.value}>{d.created_at ?? "-"}</div>
             </div>
           </div>
         );

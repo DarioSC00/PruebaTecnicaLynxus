@@ -1,60 +1,90 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./sidebarComponents.module.css";
 
 type NavItem = { href: string; label: string; icon?: React.ReactNode };
 
-const DEFAULT_NAV: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="3" y="3" width="8" height="8" rx="1" fill="currentColor"/></svg>) },
-  { href: "/user", label: "Usuarios", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><circle cx="12" cy="8" r="3" fill="currentColor"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>) },
-  // Entry para la lista de proyectos
-  { href: "/project", label: "Proyectos", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="3" y="4" width="18" height="6" rx="1" fill="currentColor"/><rect x="3" y="14" width="9" height="6" rx="1" fill="currentColor"/></svg>) },
-  // Opcional: acceso directo para crear nuevo proyecto
-  { href: "/project/new", label: "Nuevo proyecto", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
-  { href: "/tasks", label: "Tareas", icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>) },
+const NAV: NavItem[] = [
+  { 
+    href: "/", 
+    label: "Dashboard",
+    icon: (
+      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+      </svg>
+    )
+  },
+  { 
+    href: "/user", 
+    label: "Usuarios",
+    icon: (
+      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    )
+  },
+  { 
+    href: "/project", 
+    label: "Proyectos",
+    icon: (
+      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+      </svg>
+    )
+  },
+  { 
+    href: "/project/new", 
+    label: "Nuevo proyecto",
+    icon: (
+      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="16" />
+        <line x1="8" y1="12" x2="16" y2="12" />
+      </svg>
+    )
+  },
+  { 
+    href: "/task", 
+    label: "Tareas",
+    icon: (
+      <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 11 12 14 22 4" />
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+      </svg>
+    )
+  },
 ];
 
-type Props = {
-  items?: NavItem[];
-  defaultCollapsed?: boolean;
-  className?: string;
-};
-
-export default function SidebarComponent({ items = DEFAULT_NAV, defaultCollapsed = false, className }: Props) {
-  const [collapsed, setCollapsed] = useState<boolean>(defaultCollapsed);
-  const pathname = usePathname() ?? "/";
+export default function SidebarComponent() {
+  const pathname = usePathname();
 
   return (
-    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""} ${className ?? ""}`} aria-label="Barra lateral principal">
-      <div className={styles.header}>
-        <div className={styles.brand}>
-          <span className={styles.logo} aria-hidden>LN</span>
-          {!collapsed && <span className={styles.title}>Lynxus</span>}
-        </div>
-
-        <button
-          className={styles.collapseBtn}
-          onClick={() => setCollapsed((c) => !c)}
-          aria-pressed={collapsed}
-          aria-label={collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
-        >
-          {collapsed ? "➤" : "◀"}
-        </button>
+    <aside className={styles.sidebar}>
+      <div className={styles.brand}>
+        <div className={styles.logo}>LN</div>
+        <span className={styles.brandName}>Lynxus</span>
       </div>
 
-      <nav className={styles.nav} role="navigation" aria-label="Navegación principal">
-        <ul>
-          {items.map((n) => {
-            // active cuando la ruta actual es exactamente la href o comienza con href + '/'
-            const active = pathname === n.href || pathname.startsWith(n.href + "/");
+      <nav className={styles.nav}>
+        <ul className={styles.navList}>
+          {NAV.map((item, idx) => {
+            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+            
             return (
-              <li key={n.href}>
-                <Link href={n.href} className={`${styles.link} ${active ? styles.active : ""}`} aria-current={active ? "page" : undefined}>
-                  <span className={styles.icon} aria-hidden>{n.icon}</span>
-                  {!collapsed && <span className={styles.label}>{n.label}</span>}
+              <li key={`${item.href}-${idx}`} className={styles.navItem}>
+                <Link 
+                  href={item.href} 
+                  className={`${styles.navLink} ${isActive ? styles.navLinkActive : ''}`}
+                >
+                  <span className={styles.navIcon}>{item.icon}</span>
+                  <span className={styles.navLabel}>{item.label}</span>
                 </Link>
               </li>
             );
@@ -63,8 +93,7 @@ export default function SidebarComponent({ items = DEFAULT_NAV, defaultCollapsed
       </nav>
 
       <div className={styles.footer}>
-        <button className={styles.smallBtn} aria-label="Cuenta">Cuenta</button>
-        {!collapsed && <div className={styles.help}>v1.0</div>}
+        <div className={styles.version}>v1.0</div>
       </div>
     </aside>
   );

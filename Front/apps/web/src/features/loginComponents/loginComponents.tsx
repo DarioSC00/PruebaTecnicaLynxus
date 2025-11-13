@@ -25,7 +25,7 @@ export default function LoginPage() {
       localStorage.setItem("access_token", response.access_token);
 
       // Redirigir a la vista protegida
-      router.push("/project");
+      router.push("/user");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesión");
     } finally {
