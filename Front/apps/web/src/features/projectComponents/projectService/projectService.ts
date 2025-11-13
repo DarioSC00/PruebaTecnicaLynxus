@@ -1,51 +1,54 @@
 import api from "../../../../axios/axios";
 import axios from "axios";
 
-export type ProjectItem = {
-  id: number;
-  name: string;
-  description?: string;
-  owner?: string;
+export type ProjectItem = { id: number; name: string; description?: string; created_at?: string };
+export type ProjectDetail = ProjectItem & {
   owner_id?: number;
-  status?: string;
-  created_at?: string;
   archived?: boolean;
+  tasks?: Array<{
+    id: number;
+    title: string;
+    status?: "todo" | "doing" | "done";
+    priority?: "low" | "med" | "high";
+    due_date?: string | null;
+  }>;
 };
 
-export type ProjectDetail = ProjectItem;
-export type ListProjectsParams = { q?: string; page?: number; page_size?: number };
-export type ListProjectsResponse = { items: ProjectItem[]; total?: number };
-
-export async function listProjects(params: ListProjectsParams = {}): Promise<ListProjectsResponse> {
+export async function listProjects(params: { q?: string; page?: number; page_size?: number } = {}) {
   try {
     const { q = "", page = 1, page_size = 50 } = params;
-    const skip = (page - 1) * page_size;
-    const res = await api.get("/projects", { params: { skip, limit: page_size, search: q } });
+    const res = await api.get("/projects", { params: { search: q, page, page_size } });
+    console.log("listProjects response:", res.status);
     return { items: Array.isArray(res.data) ? res.data : [], total: Array.isArray(res.data) ? res.data.length : 0 };
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
-      console.error("listProjects error:", err.response?.data ?? err);
-      throw err.response?.data ?? err;
+      const status = err.response?.status;
+      console.error("listProjects error:", status, err.response?.data);
+      if (status === 401 && typeof window !== "undefined") {
+        localStorage.removeItem("access_token");
+        window.location.href = "/login";
+      }
+      return { items: [], total: 0 };
     }
     throw err;
   }
 }
 
 export async function getProject(id: number): Promise<ProjectDetail> {
-  const res = await api.get(`/projects/${id}`);
-  return res.data;
-}
-
-export async function createProject(projectData: { name: string; description?: string }) {
-  const res = await api.post("/projects", projectData);
-  return res.data;
-}
-
-export async function updateProject(id: number, projectData: Partial<ProjectDetail>) {
-  const res = await api.put(`/projects/${id}`, projectData);
-  return res.data;
-}
-
-export async function deleteProject(id: number) {
-  await api.delete(`/projects/${id}`);
+  try {
+    const res = await api.get(`/projects/${id}`);
+    console.log("getProject response:", res.status);
+    return res.data as ProjectDetail;
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      console.error("getProject error:", status, err.response?.data);
+      if (status === 401 && typeof window !== "undefined") {
+        localStorage.removeItem("access_token");
+        window.location.href = "/login";
+      }
+      throw err.response?.data ?? err;
+    }
+    throw err;
+  }
 }

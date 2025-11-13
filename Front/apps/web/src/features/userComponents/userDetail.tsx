@@ -9,6 +9,11 @@ type UserDetailType = userService.UserDetail;
 type ProjectItem = { id: number; name: string; description?: string };
 type TaskItem = { id: number; title: string; status: 'todo' | 'doing' | 'done'; priority: 'low' | 'med' | 'high' };
 
+// Helper seguro para obtener clases desde CSS modules
+function getStyle(stylesObj: Record<string,string>, key: string) {
+  return (stylesObj as Record<string,string>)[key] ?? "";
+}
+
 export default function UserDetail({ 
   userId, 
   open, 
@@ -122,23 +127,27 @@ export default function UserDetail({
               <div className={styles.detailSection}>
                 <h3 className={styles.sectionTitle}>Tareas asignadas ({user.tasks.length})</h3>
                 <ul className={styles.taskList}>
-                  {user.tasks.map((task: TaskItem) => (
-                    <li key={task.id} className={styles.taskItem}>
-                      <div className={styles.taskTitle}>{task.title}</div>
-                      <div className={styles.taskMeta}>
-                        <span className={`${styles.taskStatus} ${styles[`status-${task.status}`]}`}>
-                          {task.status === 'todo' && 'Por hacer'}
-                          {task.status === 'doing' && 'En progreso'}
-                          {task.status === 'done' && 'Completada'}
-                        </span>
-                        <span className={`${styles.taskPriority} ${styles[`priority-${task.priority}`]}`}>
-                          {task.priority === 'low' && 'Baja'}
-                          {task.priority === 'med' && 'Media'}
-                          {task.priority === 'high' && 'Alta'}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
+                  {user.tasks.map((task) => {
+                    const statusKey = `status-${task.status}`;
+                    const priorityKey = `priority-${task.priority}`;
+                    return (
+                      <li key={task.id} className={styles.taskItem}>
+                        <div className={styles.taskTitle}>{task.title}</div>
+                        <div className={styles.taskMeta}>
+                          <span className={`${styles.taskStatus} ${getStyle(styles, statusKey)}`}>
+                            {task.status === 'todo' && 'Por hacer'}
+                            {task.status === 'doing' && 'En progreso'}
+                            {task.status === 'done' && 'Completada'}
+                          </span>
+                          <span className={`${styles.taskPriority} ${getStyle(styles, priorityKey)}`}>
+                            {task.priority === 'low' && 'Baja'}
+                            {task.priority === 'med' && 'Media'}
+                            {task.priority === 'high' && 'Alta'}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}

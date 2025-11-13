@@ -6,19 +6,17 @@ export type UserItem = {
   name: string;
   email: string;
   created_at?: string;
+  is_active?: boolean;
 };
 
 export type UserDetail = UserItem & {
-  projects?: Array<{ 
-    id: number; 
-    name: string; 
-    description?: string; 
-  }>;
-  tasks?: Array<{ 
-    id: number; 
-    title: string; 
-    status: 'todo' | 'doing' | 'done'; 
+  projects?: Array<{ id: number; name: string; description?: string }>;
+  tasks?: Array<{
+    id: number;
+    title: string;
+    status: 'todo' | 'doing' | 'done';
     priority: 'low' | 'med' | 'high';
+    due_date?: string | null;
   }>;
 };
 
@@ -28,22 +26,46 @@ export type ListUsersResponse = { items: UserItem[]; total?: number };
 export async function listUsers(params: ListUsersParams = {}): Promise<ListUsersResponse> {
   try {
     const { q = "", page = 1, page_size = 50 } = params;
-    const skip = (page - 1) * page_size;
-    const res = await api.get("/users", { params: { skip, limit: page_size, search: q } });
-    return { 
-      items: Array.isArray(res.data) ? res.data : [], 
-      total: Array.isArray(res.data) ? res.data.length : 0 
+    // enviar los mismos nombres de query que espera el backend (q, page, page_size)
+    const res = await api.get("/users", { params: { q, page, page_size } });
+    console.log("listUsers response:", res.status, res.data);
+
+    // el backend devuelve { items: [...], total, page, page_size }
+    const payload = res.data as { items?: UserItem[]; total?: number };
+
+    return {
+      items: Array.isArray(payload.items) ? payload.items : [],
+      total: typeof payload.total === "number" ? payload.total : (Array.isArray(payload.items) ? payload.items.length : 0),
     };
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
-      console.error("listUsers error:", err.response?.data ?? err);
-      throw err.response?.data ?? err;
+      const status = err.response?.status;
+      console.error("listUsers error:", status, err.response?.data);
+      if (status === 401 && typeof window !== "undefined") {
+        localStorage.removeItem("access_token");
+        window.location.href = "/login";
+      }
+      return { items: [], total: 0 };
     }
     throw err;
   }
 }
 
 export async function getUser(id: number): Promise<UserDetail> {
-  const res = await api.get(`/users/${id}`);
-  return res.data;
+  try {
+    const res = await api.get(`/users/${id}`);
+    console.log("getUser response:", res.status, res.data);
+    return res.data as UserDetail;
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      console.error("getUser error:", status, err.response?.data);
+      if (status === 401 && typeof window !== "undefined") {
+        localStorage.removeItem("access_token");
+        window.location.href = "/login";
+      }
+      throw err.response?.data ?? err;
+    }
+    throw err;
+  }
 }
