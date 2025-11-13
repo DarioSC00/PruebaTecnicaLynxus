@@ -26,9 +26,9 @@ export type ListUsersResponse = { items: UserItem[]; total?: number };
 export async function listUsers(params: ListUsersParams = {}): Promise<ListUsersResponse> {
   try {
     const { q = "", page = 1, page_size = 50 } = params;
-    // enviar los mismos nombres de query que espera el backend (q, page, page_size)
-    const res = await api.get("/users", { params: { q, page, page_size } });
-    console.log("listUsers response:", res.status, res.data);
+    // el backend espera page y page_size (no skip/limit)
+    const res = await api.get("/users/", { params: { q, page, page_size } });
+    console.log("[userService] listUsers response:", res.status, res.data);
 
     // el backend devuelve { items: [...], total, page, page_size }
     const payload = res.data as { items?: UserItem[]; total?: number };

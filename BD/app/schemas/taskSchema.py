@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Literal
 from datetime import datetime
+from .userSchema import UserOut
+from .commentSchema import CommentOut
 
 # Tipos literales para estado y prioridad
 StatusType = Literal["todo", "doing", "done"]
@@ -47,3 +49,13 @@ class TasksPage(BaseModel):
     total: int
     page: int
     page_size: int
+
+class TaskOut(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    status: str
+    priority: str
+    due_date: Optional[str] = None
+    assignee: Optional[UserOut] = None
+    comments: List[CommentOut] = []

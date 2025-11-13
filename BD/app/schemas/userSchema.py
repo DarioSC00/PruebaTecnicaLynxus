@@ -1,47 +1,27 @@
-from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
+from pydantic import BaseModel, EmailStr
 
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str = Field(..., min_length=8)
-    name: Optional[str] = None
-
-
-class UserUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    password: Optional[str] = Field(None, min_length=8)
-    name: Optional[str] = None
-    is_active: Optional[bool] = None
-
-
-class UserInDB(BaseModel):
-    id: int
+class UserBase(BaseModel):
     email: EmailStr
     name: Optional[str] = None
-    is_active: bool = True
-    created_at: datetime
+    is_active: Optional[bool] = True
 
-    class Config:
-        from_attributes = True  # ✅ reemplaza 'orm_mode = True' en Pydantic v2
+    model_config = {"from_attributes": True}
 
-
-class UserRead(BaseModel):
-    id: int
-    email: str
-    name: Optional[str] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True  # ✅ evita el warning de 'orm_mode'
-
-
-class LoginRequest(BaseModel):
-    email: EmailStr
+class UserCreate(UserBase):
     password: str
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    is_active: Optional[bool] = None
+    password: Optional[str] = None
 
-class LoginResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    user: UserRead
+    model_config = {"from_attributes": True}
+
+class UserOut(UserBase):
+    id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}

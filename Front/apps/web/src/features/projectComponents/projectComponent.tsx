@@ -35,15 +35,48 @@ export default function ProjectList() {
   }, [query, reloadKey]);
 
   const columns = [
-    { id: "name", header: "Nombre", accessor: "name" as keyof projectService.ProjectItem },
-    { id: "description", header: "Descripción", accessor: (i: projectService.ProjectItem) => i.description ?? "-" },
-    { id: "created_at", header: "Creado", accessor: (i: projectService.ProjectItem) => i.created_at ?? "-" },
+    { 
+      id: "project", 
+      header: "Proyecto", 
+      accessor: (p: projectService.ProjectItem) => (
+        <div className={styles.projectCell}>
+          <div className={styles.projectName}>{p.name}</div>
+          <div className={styles.projectDescription}>{p.description || "Sin descripción"}</div>
+        </div>
+      )
+    },
+    { 
+      id: "status", 
+      header: "Estado", 
+      accessor: (p: projectService.ProjectItem) => (
+        <span className={styles.statusBadge} data-status={p.status}>
+          {p.status === 'in_progress' ? 'En progreso' : 
+           p.status === 'completed' ? 'Completado' : 
+           p.status === 'cancelled' ? 'Cancelado' : 'Pendiente'}
+        </span>
+      )
+    },
+    { 
+      id: "created_at", 
+      header: "Creado", 
+      accessor: (p: projectService.ProjectItem) => {
+        if (!p.created_at) return "-";
+        const date = new Date(p.created_at);
+        return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+      }
+    },
   ];
 
   return (
     <div className={styles.pageContainer}>
+      <div className={styles.breadcrumb}>
+        <span className={styles.breadcrumbText}>Proyectos</span>
+      </div>
+      
       <header className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Proyectos</h1>
+        <h2 className={styles.pageCount}>
+          {loading ? "Cargando..." : `${projects.length} proyecto${projects.length !== 1 ? 's' : ''}`}
+        </h2>
         <div className={styles.pageActions}>
           <input
             className={styles.searchInput}
@@ -56,8 +89,16 @@ export default function ProjectList() {
       </header>
 
       <div className={styles.pageContent}>
-        {loading && <p>Cargando proyectos...</p>}
-        {!loading && projects.length === 0 && <p>No hay proyectos</p>}
+        {loading && <p className={styles.loadingState}>Cargando proyectos...</p>}
+        {!loading && projects.length === 0 && (
+          <div className={styles.emptyState}>
+            <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
+            <p>No hay proyectos</p>
+            <small>Crea tu primer proyecto para comenzar</small>
+          </div>
+        )}
         {!loading && projects.length > 0 && (
           <TableUniversal<projectService.ProjectItem>
             columns={columns}
@@ -70,7 +111,7 @@ export default function ProjectList() {
                 className={styles.btn}
                 onClick={(e) => { e.stopPropagation(); setSelectedId(p.id); setOpen(true); }}
               >
-                Ver
+                Ver detalles
               </button>
             )}
           />

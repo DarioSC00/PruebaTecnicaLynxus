@@ -63,7 +63,7 @@ export default function TableUniversal<T extends Record<string, unknown>>({
                 {col.header}
               </th>
             ))}
-            {actions && <th className={styles.th} scope="col" style={{ width: 120 }}>Accitions</th>}
+            {actions && <th className={styles.th} scope="col" style={{ width: 120 }}>Actions</th>}
           </tr>
         </thead>
 

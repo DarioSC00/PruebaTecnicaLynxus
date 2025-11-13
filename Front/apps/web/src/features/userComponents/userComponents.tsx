@@ -33,15 +33,51 @@ export default function UserList() {
   }, [query, reloadKey]);
 
   const columns = [
-    { id: "name", header: "Nombre", accessor: "name" as keyof userService.UserItem },
-    { id: "email", header: "Email", accessor: "email" as keyof userService.UserItem },
-    { id: "created_at", header: "Registrado", accessor: (i: userService.UserItem) => i.created_at ?? "-" },
+    { 
+      id: "user", 
+      header: "Usuario", 
+      accessor: (u: userService.UserItem) => (
+        <div className={styles.userCell}>
+          <div className={styles.avatar}>
+            {u.name?.charAt(0)?.toUpperCase() || "U"}
+          </div>
+          <div className={styles.userInfo}>
+            <div className={styles.userName}>{u.name}</div>
+            <div className={styles.userEmail}>{u.email}</div>
+          </div>
+        </div>
+      )
+    },
+    { 
+      id: "is_active", 
+      header: "Estado", 
+      accessor: (u: userService.UserItem) => (
+        <span className={styles.activeBadge} data-active={u.is_active ? "true" : "false"}>
+          {u.is_active ? "Activo" : "Inactivo"}
+        </span>
+      )
+    },
+    { 
+      id: "created_at", 
+      header: "Registrado", 
+      accessor: (u: userService.UserItem) => {
+        if (!u.created_at) return "-";
+        const date = new Date(u.created_at);
+        return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+      }
+    },
   ];
 
   return (
     <div className={styles.pageContainer}>
+      <div className={styles.breadcrumb}>
+        <span className={styles.breadcrumbText}>Usuarios</span>
+      </div>
+      
       <header className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Usuarios</h1>
+        <h2 className={styles.pageCount}>
+          {loading ? "Cargando..." : `${users.length} usuario${users.length !== 1 ? 's' : ''}`}
+        </h2>
         <div className={styles.pageActions}>
           <input
             className={styles.searchInput}
@@ -49,26 +85,15 @@ export default function UserList() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar usuarios..."
           />
-          <button 
-            className={styles.btnSecondary}
-            onClick={() => setReloadKey(k => k + 1)}
-          >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-            </svg>
-            Recargar
-          </button>
         </div>
       </header>
 
       <div className={styles.pageContent}>
-        {loading && <p className={styles.emptyState}>Cargando usuarios...</p>}
+        {loading && <p className={styles.loadingState}>Cargando usuarios...</p>}
         {!loading && users.length === 0 && (
           <div className={styles.emptyState}>
-            <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
+            <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
             <p>No hay usuarios registrados</p>
             <small>Los usuarios se crean mediante el formulario de registro</small>

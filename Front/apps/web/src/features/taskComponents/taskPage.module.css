@@ -1,5 +1,5 @@
 /* ===============================================
-   SHARED PAGE STYLES - Usuarios
+   SHARED PAGE STYLES - Tareas
    =============================================== */
 
 /* Page Container */
@@ -112,49 +112,57 @@
   color: #9ca3af;
 }
 
-/* User-specific table cells */
-.userCell {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 0.95rem;
-  flex-shrink: 0;
-}
-
-.userInfo {
+/* Task-specific table cells */
+.taskCell {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  min-width: 0;
 }
 
-.userName {
+.taskTitle {
   font-weight: 600;
   color: #111827;
   font-size: 0.95rem;
 }
 
-.userEmail {
+.taskDescription {
   font-size: 0.85rem;
   color: #6b7280;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-.activeBadge {
+/* Badges */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.statusBadge[data-status="todo"] {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.statusBadge[data-status="doing"] {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.statusBadge[data-status="done"] {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.priorityBadge {
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.75rem;
@@ -163,12 +171,17 @@
   font-weight: 500;
 }
 
-.activeBadge[data-active="true"] {
-  background-color: #d1fae5;
-  color: #065f46;
+.priorityBadge[data-priority="low"] {
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
-.activeBadge[data-active="false"] {
+.priorityBadge[data-priority="med"] {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.priorityBadge[data-priority="high"] {
   background-color: #fee2e2;
   color: #991b1b;
 }
@@ -194,6 +207,40 @@
   color: #2563eb;
 }
 
+/* Filters */
+.filters {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 1rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+}
+
+.filterLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.filterSelect {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #111827;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.filterSelect:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
 /* Detail Modal specific */
 .keyValue {
   display: flex;
@@ -213,25 +260,4 @@
   font-size: 0.95rem;
   color: #111827;
   margin: 0;
-}
-
-/* Card layout (alternative view if needed) */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1.25rem;
-  transition: all 0.2s ease;
-}
-
-.card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
 }

@@ -2,12 +2,17 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
+from sqlmodel import select
+from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.crud.projectController import project_crud
-from app.schemas.projectSchema import ProjectCreate, ProjectResponse, ProjectUpdate  
+from app.schemas.projectSchema import ProjectCreate, ProjectResponse, ProjectUpdate, ProjectOut  
 from app.api.dependencies import get_current_active_user  
 from app.models.user import User
+from app.models.project import Project
+from app.models.task import Task
+from app.models.comment import Comment
 
 router = APIRouter()
 
@@ -125,3 +130,23 @@ def get_projects_by_user(
     """Obtener proyectos por ID de usuario"""
     projects = project_crud.get_all(db=db, owner_id=user_id)
     return projects
+
+
+@router.get("/{project_id}", response_model=ProjectOut)
+def read_project(
+    project_id: int, 
+    session: Session = Depends(get_db)
+):
+    stmt = (
+        select(Project)
+        .where(Project.id == project_id)
+        .options(
+            selectinload(Project.owner),
+            selectinload(Project.tasks).selectinload(Task.assignee),
+            selectinload(Project.tasks).selectinload(Task.comments).selectinload(Comment.author),
+        )
+    )
+    project = session.exec(stmt).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project

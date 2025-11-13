@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
+from .userSchema import UserOut
+from .taskSchema import TaskOut
 
 # --- Crear Proyecto ---
 class ProjectCreate(BaseModel):
@@ -26,3 +28,12 @@ class ProjectResponse(BaseModel):
 
     class Config:
         from_attributes = True  # ✅ reemplaza orm_mode en Pydantic v2
+
+
+class ProjectOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    archived: bool = False
+    owner: Optional[UserOut] = None
+    tasks: List[TaskOut] = []

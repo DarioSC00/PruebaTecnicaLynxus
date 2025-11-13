@@ -11,19 +11,27 @@ type Props = {
   onCreated?: () => void;
 };
 
+// Reemplazado: evitar depender de un tipo 'any' exportado; definir tipo local claro
+type CreateProjectInput = {
+  name: string;
+  description?: string;
+  owner?: string | number;
+  status?: string;
+};
+
 export default function ProjectCreateComponent({ defaultOpen = false, onCreated }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState<boolean>(Boolean(defaultOpen));
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // usar tipo CreateProjectInput
-  async function handleCreate(values: projectService.CreateProjectInput) {
+  async function handleCreate(values: CreateProjectInput) {
     setSubmitting(true);
     try {
+      // pasar directamente el objeto tipado
       await projectService.createProject(values);
       setOpen(false);
       if (typeof onCreated === "function") onCreated();
-      router.push("/project"); // ajustar ruta según tu app (antes /projects)
+      router.push("/project");
     } catch (err: unknown) {
       console.error("createProject error:", err);
     } finally {
@@ -31,11 +39,10 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
     }
   }
 
-  // Usar STATUS_OPTIONS exportado si existe, si no fallback
   const raw = (projectService as unknown as { STATUS_OPTIONS?: unknown }).STATUS_OPTIONS;
   const isStringArray = (arr: unknown): arr is string[] =>
     Array.isArray(arr) && arr.every((v) => typeof v === "string");
-  const STATUS_OPTIONS: string[] = isStringArray(raw) ? raw : projectService.STATUS_OPTIONS ?? ["active", "archived", "planned"];
+  const STATUS_OPTIONS: string[] = isStringArray(raw) ? (raw as string[]) : ["active", "archived", "planned"];
 
   return (
     <>
@@ -43,12 +50,13 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
         Nuevo proyecto
       </button>
 
-      <CreateUniversalModal<projectService.CreateProjectInput>
+      {/* Usar el alias de tipo para evitar errores de JSX con genéricos */}
+      <CreateUniversalModal<CreateProjectInput>
         open={open}
         onClose={() => setOpen(false)}
         title="Crear proyecto"
         submitLabel={submitting ? "Creando…" : "Crear"}
-        initialValues={{ name: "", description: "", owner: "", status: "" }}
+        initialValues={{ name: "", description: "", owner: "", status: "" } as CreateProjectInput}
         onSubmit={handleCreate}
         renderForm={({ values, setValues }) => (
           <>
@@ -56,7 +64,9 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
               Nombre
               <input
                 value={String(values.name ?? "")}
-                onChange={(e) => setValues((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setValues((prev: CreateProjectInput) => ({ ...prev, name: e.target.value }))
+                }
                 placeholder="Nombre del proyecto"
                 required
               />
@@ -66,7 +76,9 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
               Descripción
               <textarea
                 value={String(values.description ?? "")}
-                onChange={(e) => setValues((prev) => ({ ...prev, description: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setValues((prev: CreateProjectInput) => ({ ...prev, description: e.target.value }))
+                }
                 placeholder="Descripción corta"
                 rows={4}
               />
@@ -76,7 +88,9 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
               Propietario
               <input
                 value={String(values.owner ?? "")}
-                onChange={(e) => setValues((prev) => ({ ...prev, owner: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setValues((prev: CreateProjectInput) => ({ ...prev, owner: e.target.value }))
+                }
                 placeholder="Nombre del propietario"
               />
             </label>
@@ -85,7 +99,9 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
               Estado
               <select
                 value={String(values.status ?? "")}
-                onChange={(e) => setValues((prev) => ({ ...prev, status: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setValues((prev: CreateProjectInput) => ({ ...prev, status: e.target.value }))
+                }
                 required
               >
                 <option value="">Selecciona estado</option>
