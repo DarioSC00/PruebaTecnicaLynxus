@@ -1,11 +1,12 @@
 .navbar {
   height: var(--navbar-height, 72px);
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--navbar-bg);
+  border-bottom: 1px solid #e6eef9;
   position: sticky;
   top: 0;
-  z-index: 80; /* por debajo del sidebar fixed */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  z-index: 90;
+  box-shadow: 0 1px 6px rgba(2, 6, 23, 0.04);
+  color: var(--text-default);
   width: 100%; /* ocupará el ancho del mainWrapper (ya desplazado por padding-left) */
 }
 
@@ -109,14 +110,14 @@
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #64748b;
+  color: var(--muted);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .iconButton:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  color: var(--text-default);
+  background: rgba(59, 130, 246, 0.06);
 }
 
 .badge {
@@ -130,11 +131,11 @@
   justify-content: center;
   padding: 0 5px;
   border-radius: 9px;
-  background: #ef4444;
-  color: #fff;
+  background: var(--danger);
+  color: white;
   font-size: 11px;
   font-weight: 600;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--navbar-bg);
 }
 
 /* Dropdown de notificaciones */

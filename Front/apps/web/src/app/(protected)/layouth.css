@@ -1,8 +1,20 @@
 :root {
+  /* Paleta principal */
+  --primary: #3b82f6;       /* azul */
+  --accent:  #8b5cf6;       /* morado */
+  --danger:  #ef4444;
+
+  /* Layout */
   --sidebar-width: 260px;
   --navbar-height: 72px;
-  --bg-white: #ffffff;
+
+  /* Colores */
+  --sidebar-bg: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+  --sidebar-text: #e6eef9;
+  --navbar-bg: #ffffff;
+  --content-bg: #f8fafc;
   --surface: #ffffff;
+  --muted: #64748b;
   --text-default: #0f172a;
 }
 
