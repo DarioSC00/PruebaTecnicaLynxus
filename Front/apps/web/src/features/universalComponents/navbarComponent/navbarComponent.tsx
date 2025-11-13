@@ -1,15 +1,27 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import styles from "./navbarComponent.module.css";
 
-export default function NavbarComponent() {
+const routeNames: Record<string, string> = {
+  "/": "Inicio",
+  "/project": "Proyectos",
+  "/user": "Usuarios",
+  "/task": "Tareas",
+  // agregar más rutas si hace falta
+};
+
+export default function NavbarComponent(): React.ReactElement {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname() || "/";
+  const parts = pathname.split("/").filter(Boolean);
+  const pageKey = parts.length ? `/${parts[0]}` : "/";
+  const pageTitle = routeNames[pageKey] ?? (parts.length ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : "Inicio");
 
   // Cerrar menus al hacer click fuera
   useEffect(() => {
@@ -30,12 +42,6 @@ export default function NavbarComponent() {
     router.push("/login");
   };
 
-  // Datos de ejemplo
-  const notifications = [
-    { id: 1, text: "Nuevo proyecto creado", time: "Hace 5 min", unread: true },
-    { id: 2, text: "Tarea completada", time: "Hace 1 hora", unread: true },
-    { id: 3, text: "Comentario añadido", time: "Hace 2 horas", unread: false },
-  ];
 
   const userName = "Ruben Salazar";
   const userEmail = "ruben@lynxus.com";
@@ -45,64 +51,20 @@ export default function NavbarComponent() {
       <div className={styles.navbarContent}>
         {/* Sección izquierda - Título/Breadcrumb */}
         <div className={styles.navbarLeft}>
-          <h1 className={styles.pageTitle}>Dashboard</h1>
+          <h1 className={styles.pageTitle}>{pageTitle}</h1>
           <div className={styles.breadcrumb}>
             <span>Inicio</span>
             <span className={styles.separator}>/</span>
-            <span className={styles.breadcrumbActive}>Dashboard</span>
+            <span className={styles.breadcrumbActive}>{pageTitle}</span>
           </div>
         </div>
 
         {/* Sección derecha - Acciones */}
         <div className={styles.navbarRight}>
-          {/* Barra de búsqueda */}
-          <div className={styles.searchBox}>
-            <svg className={styles.searchIcon} width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Buscar..."
-              className={styles.searchInput}
-            />
-          </div>
+        
+        
 
-          {/* Notificaciones */}
-          <div className={styles.iconWrapper} ref={notifRef}>
-            <button
-              className={styles.iconButton}
-              onClick={() => setShowNotifications(!showNotifications)}
-              aria-label="Notificaciones"
-            >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-              {notifications.some(n => n.unread) && <span className={styles.badge}>{notifications.filter(n => n.unread).length}</span>}
-            </button>
-
-            {showNotifications && (
-              <div className={styles.dropdown}>
-                <div className={styles.dropdownHeader}>
-                  <h3>Notificaciones</h3>
-                  <button className={styles.markAllRead}>Marcar todas leídas</button>
-                </div>
-                <ul className={styles.notificationList}>
-                  {notifications.map(notif => (
-                    <li key={notif.id} className={`${styles.notificationItem} ${notif.unread ? styles.unread : ''}`}>
-                      <div className={styles.notificationText}>{notif.text}</div>
-                      <div className={styles.notificationTime}>{notif.time}</div>
-                    </li>
-                  ))}
-                </ul>
-                <div className={styles.dropdownFooter}>
-                  <button className={styles.viewAll}>Ver todas</button>
-                </div>
-              </div>
-            )}
-          </div>
-
+        
           {/* Perfil de usuario */}
           <div className={styles.userWrapper} ref={menuRef}>
             <button

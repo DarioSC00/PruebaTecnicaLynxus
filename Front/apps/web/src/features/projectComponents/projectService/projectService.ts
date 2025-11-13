@@ -4,7 +4,9 @@ import axios from "axios";
 export type ProjectItem = { id: number; name: string; description?: string; created_at?: string };
 export type ProjectDetail = ProjectItem & {
   owner_id?: number;
+  owner?: string | { id: number; name?: string; email?: string };
   archived?: boolean;
+  status?: string;
   tasks?: Array<{
     id: number;
     title: string;
@@ -13,6 +15,31 @@ export type ProjectDetail = ProjectItem & {
     due_date?: string | null;
   }>;
 };
+
+// Nuevo: tipo para crear proyecto (formularios)
+export type CreateProjectInput = {
+  name: string;
+  description?: string;
+  owner?: string | number;
+  status?: string;
+};
+
+// Opciones públicas de estado (si quieres centralizarlas)
+export const STATUS_OPTIONS: string[] = ["active", "archived", "planned"];
+
+// Nuevo: crear proyecto
+export async function createProject(payload: CreateProjectInput) {
+  try {
+    const res = await api.post("/projects", payload);
+    return res.data;
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      console.error("createProject error:", err.response?.status, err.response?.data);
+      throw err.response?.data ?? err;
+    }
+    throw err;
+  }
+}
 
 export async function listProjects(params: { q?: string; page?: number; page_size?: number } = {}) {
   try {

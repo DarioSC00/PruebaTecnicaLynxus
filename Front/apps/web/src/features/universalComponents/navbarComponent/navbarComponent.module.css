@@ -1,13 +1,14 @@
 .navbar {
   height: var(--navbar-height, 72px);
-  background: var(--navbar-bg);
-  border-bottom: 1px solid #e6eef9;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
   position: sticky;
   top: 0;
   z-index: 90;
-  box-shadow: 0 1px 6px rgba(2, 6, 23, 0.04);
-  color: var(--text-default);
-  width: 100%; /* ocupará el ancho del mainWrapper (ya desplazado por padding-left) */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  color: #0f172a;
+  width: 100%;
+  backdrop-filter: blur(12px);
 }
 
 /* Si usas una clase .navbarContent asegurate que tenga width: 100% y padding interior. */
@@ -67,17 +68,17 @@
 
 .searchIcon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   color: #94a3b8;
   pointer-events: none;
 }
 
 .searchInput {
-  width: 280px;
-  height: 40px;
-  padding: 0 12px 0 40px;
+  width: 320px;
+  height: 44px;
+  padding: 0 16px 0 44px;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 14px;
   color: #0f172a;
   background: #f8fafc;
@@ -88,7 +89,7 @@
   outline: none;
   border-color: #3b82f6;
   background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
 }
 
 .searchInput::placeholder {
@@ -102,22 +103,23 @@
 
 .iconButton {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: transparent;
-  color: var(--muted);
+  color: #64748b;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .iconButton:hover {
-  color: var(--text-default);
-  background: rgba(59, 130, 246, 0.06);
+  color: #0f172a;
+  background: #f1f5f9;
+  transform: scale(1.05);
 }
 
 .badge {

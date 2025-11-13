@@ -1,21 +1,22 @@
 :root {
   /* Paleta principal */
-  --primary: #3b82f6;       /* azul */
-  --accent:  #8b5cf6;       /* morado */
+  --primary: #3b82f6;
+  --accent:  #8b5cf6;
   --danger:  #ef4444;
 
   /* Layout */
   --sidebar-width: 260px;
   --navbar-height: 72px;
 
-  /* Colores */
-  --sidebar-bg: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
-  --sidebar-text: #e6eef9;
+  /* Colores - Jerarquía clara */
+  --sidebar-bg: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  --sidebar-text: #cbd5e1;
   --navbar-bg: #ffffff;
   --content-bg: #f8fafc;
   --surface: #ffffff;
   --muted: #64748b;
   --text-default: #0f172a;
+  --border-light: #e5e7eb;
 }
 
 /* Fondo global blanco */
@@ -57,9 +58,9 @@ html, body, #__next {
   flex: 1;
   overflow-y: auto;
   background: #f8fafc;
-  padding: 24px;
+  padding: 32px;
   box-sizing: border-box;
-  margin-top: var(--navbar-height); /* evita que contenido quede bajo navbar si éste no ocupa espacio */
+  min-height: calc(100vh - var(--navbar-height));
 }
 
 /* Asegurar visibilidad de contenedores internos */
@@ -67,10 +68,4 @@ html, body, #__next {
 .mainContent section,
 .mainContent .pageLayout {
   background: var(--surface) !important;
-}
-
-/* Forzar transparencia a módulos que inyecten color */
-[class*="module__"],
-[class*="module-"] {
-  background: transparent !important;
 }

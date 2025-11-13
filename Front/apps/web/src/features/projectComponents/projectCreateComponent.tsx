@@ -14,32 +14,28 @@ type Props = {
 export default function ProjectCreateComponent({ defaultOpen = false, onCreated }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState<boolean>(Boolean(defaultOpen));
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
-  async function handleCreate(values: projectService.ProjectDetail) {
+  // usar tipo CreateProjectInput
+  async function handleCreate(values: projectService.CreateProjectInput) {
     setSubmitting(true);
     try {
       await projectService.createProject(values);
       setOpen(false);
       if (typeof onCreated === "function") onCreated();
-      router.push("/projects");
+      router.push("/project"); // ajustar ruta según tu app (antes /projects)
     } catch (err: unknown) {
       console.error("createProject error:", err);
-      // opcional: mostrar notificación al usuario
     } finally {
       setSubmitting(false);
     }
   }
 
-  // Opciones por defecto (reemplazar por las del backend si las provees)
-  // obtener y validar STATUS_OPTIONS del servicio sin usar `any`
-  const svc = projectService as unknown as { STATUS_OPTIONS?: unknown };
-  const rawStatus = svc.STATUS_OPTIONS;
+  // Usar STATUS_OPTIONS exportado si existe, si no fallback
+  const raw = (projectService as unknown as { STATUS_OPTIONS?: unknown }).STATUS_OPTIONS;
   const isStringArray = (arr: unknown): arr is string[] =>
     Array.isArray(arr) && arr.every((v) => typeof v === "string");
-  const STATUS_OPTIONS: string[] = isStringArray(rawStatus)
-    ? rawStatus
-    : ["active", "archived", "planned"];
+  const STATUS_OPTIONS: string[] = isStringArray(raw) ? raw : projectService.STATUS_OPTIONS ?? ["active", "archived", "planned"];
 
   return (
     <>
@@ -47,7 +43,7 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
         Nuevo proyecto
       </button>
 
-      <CreateUniversalModal<projectService.ProjectDetail>
+      <CreateUniversalModal<projectService.CreateProjectInput>
         open={open}
         onClose={() => setOpen(false)}
         title="Crear proyecto"
