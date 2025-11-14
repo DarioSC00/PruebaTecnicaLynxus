@@ -31,14 +31,14 @@ export default function RootLayout({
         {children}
         <ToastContainer
           position="top-right"
-          autoClose={false}
+          autoClose={5000}
           hideProgressBar={false}
           newestOnTop={false}
           closeOnClick
           rtl={false}
-          pauseOnFocusLoss
+          pauseOnFocusLoss={false}
           draggable
-          pauseOnHover
+          pauseOnHover={false}
           theme="colored"
         />
       </body>
