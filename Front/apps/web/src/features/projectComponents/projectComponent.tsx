@@ -8,6 +8,7 @@ import ProjectDetail from "./detailProject";
 import TaskCreate from "../taskComponents/taskCreateComponent";
 import ProjectCreateComponent from "./projectCreateComponent";
 import AddMembersModal from "./addMembersModal";
+import PaginationUniversal from "../universalComponents/paginationUniversalComponents/paginationUniversal";
 
 // Tipos concretos para evitar `any`
 type Task = {
@@ -31,15 +32,6 @@ type ProjectItem = {
   tasks?: Task[]; // ahora tipado
 };
 
-type Paginated<T> = {
-  items: T[];
-  total?: number;
-  page?: number;
-  page_size?: number;
-};
-
-type ServiceFunc = (...args: unknown[]) => Promise<unknown>;
-
 export default function ProjectList() {
   const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,6 +40,12 @@ export default function ProjectList() {
   const [tasksLoading, setTasksLoading] = useState<Record<number, boolean>>({});
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
+
+  // Search and pagination state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 10;
 
   // states for project modals / create task
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
@@ -73,40 +71,28 @@ export default function ProjectList() {
       try {
         setLoading(true);
 
-        // Tipado seguro para el service
-        const svc = projectService as unknown as Record<string, ServiceFunc>;
-        let res: unknown;
+        const res = await projectService.listProjects({
+          q: searchQuery,
+          page: currentPage,
+          page_size: pageSize
+        });
 
-        if (typeof svc.listProjects === "function") {
-          res = await svc.listProjects();
-        } else if (typeof svc.list === "function") {
-          res = await svc.list();
-        } else if (typeof svc.getProjects === "function") {
-          res = await svc.getProjects();
-        } else {
-          throw new Error(
-            "projectService no exporta listProjects, list ni getProjects. Revisa los nombres exportados."
-          );
-        }
-
-        // Normalizar respuesta a ProjectItem[]
-        let items: ProjectItem[] = [];
-        if (Array.isArray(res)) {
-          items = res as ProjectItem[];
-        } else if (res && typeof res === "object" && "items" in (res as object)) {
-          items = (res as Paginated<ProjectItem>).items ?? [];
-        } else {
-          items = [];
-        }
-
-        setProjects(items);
+        setProjects(res.items || []);
+        setTotalItems(res.total || 0);
       } catch (err) {
         console.error("Error loading projects:", err);
+        setProjects([]);
+        setTotalItems(0);
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [searchQuery, currentPage]);
+
+  // Reset page when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const toggleExpand = async (projectId: number) => {
     const isOpen = !!expanded[projectId];
@@ -147,9 +133,23 @@ export default function ProjectList() {
       <div className={styles.headerRow}>
         <div>
           <h2>Projects</h2>
-          <div className={styles.subtitle}>{projects.length} project(s)</div>
+          <div className={styles.subtitle}>
+            {loading ? "Loading..." : `${totalItems} project${totalItems !== 1 ? 's' : ''}`}
+          </div>
         </div>
-        <ProjectCreateComponent onCreated={() => window.location.reload()} />
+        <div className={styles.headerActions}>
+          <input
+            className={styles.searchInput}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search projects..."
+          />
+          <ProjectCreateComponent onCreated={() => {
+            setSearchQuery("");
+            setCurrentPage(1);
+            window.location.reload();
+          }} />
+        </div>
       </div>
 
       {loading ? (
@@ -256,6 +256,18 @@ export default function ProjectList() {
               </div>
             ))}
           </div>
+
+          {/* Pagination */}
+          {!loading && totalItems > 0 && (
+            <PaginationUniversal
+              currentPage={currentPage}
+              totalPages={Math.ceil(totalItems / pageSize)}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              disabled={loading}
+            />
+          )}
         </div>
       )}
 

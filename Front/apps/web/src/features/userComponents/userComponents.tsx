@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import TableUniversal from "../universalComponents/tableUniversalComponents/tableUniversal";
+import PaginationUniversal from "../universalComponents/paginationUniversalComponents/paginationUniversal";
 import UserDetail from "./userDetail";
 import * as userService from "./userService/userService";
 import styles from "./userPage.module.css";
@@ -13,24 +14,40 @@ export default function UserList() {
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 10;
 
   useEffect(() => {
     let mounted = true;
     React.startTransition(() => setLoading(true));
     (async () => {
       try {
-        const res = await userService.listUsers({ q: query, page: 1, page_size: 50 });
+        const res = await userService.listUsers({ q: query, page: currentPage, page_size: pageSize });
         if (!mounted) return;
-        React.startTransition(() => setUsers(res.items));
+        React.startTransition(() => {
+          setUsers(res.items);
+          setTotalItems(res.total || 0);
+        });
       } catch (err) {
         console.error("❌ listUsers error:", err);
-        if (mounted) React.startTransition(() => setUsers([]));
+        if (mounted) React.startTransition(() => {
+          setUsers([]);
+          setTotalItems(0);
+        });
       } finally {
         if (mounted) React.startTransition(() => setLoading(false));
       }
     })();
     return () => { mounted = false; };
-  }, [query, reloadKey]);
+  }, [query, currentPage, reloadKey]);
+
+  // Reset page when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query]);
 
   const columns = [
     { 
@@ -76,7 +93,7 @@ export default function UserList() {
       
       <header className={styles.pageHeader}>
         <h2 className={styles.pageCount}>
-          {loading ? "Loading..." : `${users.length} user${users.length !== 1 ? 's' : ''}`}
+          {loading ? "Loading..." : `${totalItems} user${totalItems !== 1 ? 's' : ''}`}
         </h2>
         <div className={styles.pageActions}>
           <input
@@ -100,21 +117,31 @@ export default function UserList() {
           </div>
         )}
         {!loading && users.length > 0 && (
-          <TableUniversal<userService.UserItem>
-            columns={columns}
-            data={users}
-            loading={loading}
-            rowKey={(u) => u.id}
-            onRowClick={(u) => { setSelectedId(u.id); setOpen(true); }}
-            actions={(u) => (
-              <button
-                className={styles.btn}
-                onClick={(e) => { e.stopPropagation(); setSelectedId(u.id); setOpen(true); }}
-              >
-                View details
-              </button>
-            )}
-          />
+          <>
+            <TableUniversal<userService.UserItem>
+              columns={columns}
+              data={users}
+              loading={loading}
+              rowKey={(u) => u.id}
+              onRowClick={(u) => { setSelectedId(u.id); setOpen(true); }}
+              actions={(u) => (
+                <button
+                  className={styles.btn}
+                  onClick={(e) => { e.stopPropagation(); setSelectedId(u.id); setOpen(true); }}
+                >
+                  View details
+                </button>
+              )}
+            />
+            <PaginationUniversal
+              currentPage={currentPage}
+              totalPages={Math.ceil(totalItems / pageSize)}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              disabled={loading}
+            />
+          </>
         )}
       </div>
 
