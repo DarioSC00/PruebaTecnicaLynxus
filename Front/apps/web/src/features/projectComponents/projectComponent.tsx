@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from "react";
 import styles from "./projectPage.module.css";
 import * as projectService from "./projectService/projectService";
-import TaskDetail from "../../features/taskComponents/taskDetail"; // ajustar si la ruta difiere
+import TaskDetail from "../taskComponents/taskDetail"; // ajustar si la ruta difiere
+import ProjectDetail from "./detailProject";
+import TaskCreate from "../taskComponents/taskCreateComponent";
 
 // Tipos concretos para evitar `any`
 type Task = {
@@ -43,6 +45,18 @@ export default function ProjectList() {
   const [tasksLoading, setTasksLoading] = useState<Record<number, boolean>>({});
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
+
+  // estados para modales de proyecto / crear tarea
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [projectDetailOpen, setProjectDetailOpen] = useState(false);
+  const [taskCreateOpenFor, setTaskCreateOpenFor] = useState<number | null>(null);
+  const reloadTasksFor = (projectId?: number) => {
+    if (!projectId) return;
+    // forzar recarga: limpiar cache de tareas y volver a abrir si estaba expandido
+    setTasksByProject((s) => ({ ...s, [projectId]: undefined as unknown as Task[] }));
+    // reabrir panel para forzar fetch en toggleExpand
+    setExpanded((s) => ({ ...s, [projectId]: true }));
+  };
 
   useEffect(() => {
     (async () => {
@@ -108,6 +122,16 @@ export default function ProjectList() {
     setTaskModalOpen(true);
   };
 
+  type TaskCreateProps = {
+    projectId: number;
+    defaultOpen?: boolean;
+    open?: boolean;
+    onCreated?: () => void;
+    onClose?: () => void;
+  };
+  // castea el componente para evitar el error de IntrinsicAttributes
+  const TaskCreateModal = TaskCreate as unknown as React.ComponentType<TaskCreateProps>;
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.headerRow}>
@@ -142,8 +166,18 @@ export default function ProjectList() {
                       {expanded[p.id] ? "▾" : "▸"}
                     </button>
                     <div>
-                      <div className={styles.projectTitle}>{p.name}</div>
-                      <div className={styles.projectDesc}>{p.description}</div>
+                      {/* ahora el nombre es un botón que abre el detail del proyecto */}
+                      <button
+                        className={styles.projectTitleBtn}
+                        onClick={() => {
+                          setSelectedProjectId(p.id);
+                          setProjectDetailOpen(true);
+                        }}
+                        aria-label={`Abrir detalle del proyecto ${p.name}`}
+                      >
+                        <div className={styles.projectTitle}>{p.name}</div>
+                        <div className={styles.projectDesc}>{p.description}</div>
+                      </button>
                     </div>
                   </div>
 
@@ -152,9 +186,29 @@ export default function ProjectList() {
                     {p.owner?.name || p.owner?.email || "-"}
                   </div>
                   <div className={styles.center}>
-                    <button className={styles.linkBtn} onClick={() => toggleExpand(p.id)}>
-                      Ver tareas
-                    </button>
+                    <div className={styles.actionsRow}>
+                      <button
+                        className={styles.actionBtn}
+                        onClick={() => {
+                          // placeholder para asignar proyecto a usuarios
+                          alert("Funcionalidad 'Asignar proyecto' por implementar");
+                        }}
+                        aria-label={`Asignar proyecto ${p.name} a usuarios`}
+                      >
+                        Asignar proyecto
+                      </button>
+
+                      <button
+                        className={styles.primaryBtn}
+                        onClick={() => {
+                          // abrir modal de creación de tarea para este proyecto
+                          setTaskCreateOpenFor(p.id);
+                        }}
+                        aria-label={`Agregar tarea al proyecto ${p.name}`}
+                      >
+                        Agregar tarea
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -190,8 +244,34 @@ export default function ProjectList() {
         </div>
       )}
 
+      {/* Project detail modal */}
+      {selectedProjectId !== null && (
+        <ProjectDetail
+          projectId={selectedProjectId}
+          open={projectDetailOpen}
+          onClose={() => {
+            setProjectDetailOpen(false);
+            setSelectedProjectId(null);
+          }}
+        />
+      )}
+
+      {/* Create task modal (por proyecto) */}
+      {taskCreateOpenFor !== null && (
+        <TaskCreateModal
+          projectId={taskCreateOpenFor}
+          open={true}
+          onCreated={() => {
+            // recargar tareas del proyecto y cerrar modal
+            reloadTasksFor(taskCreateOpenFor);
+            setTaskCreateOpenFor(null);
+          }}
+          onClose={() => setTaskCreateOpenFor(null)}
+        />
+      )}
+
       {/* TaskDetail modal */}
-      {selectedTaskId && (
+      {selectedTaskId !== null && (
         <TaskDetail
           taskId={selectedTaskId}
           open={taskModalOpen}
