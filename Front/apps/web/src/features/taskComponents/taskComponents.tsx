@@ -176,16 +176,18 @@ export default function TaskList() {
         )}
       </div>
 
-      {/* TODO: TaskDetail modal */}
-      <TaskDetail
-        taskId={selectedId}
-        open={open}
-        onClose={() => {
-          setOpen(false);
-          setSelectedId(null);
-        }}
-        onUpdate={() => setReloadKey((k) => k + 1)}
-      />
+      {/* TaskDetail modal: solo renderizar si hay un id seleccionado */}
+      {selectedId !== null && (
+        <TaskDetail
+          taskId={selectedId}
+          open={open}
+          onClose={() => {
+            setOpen(false);
+            setSelectedId(null);
+          }}
+          onUpdate={() => setReloadKey((k) => k + 1)}
+        />
+      )}
     </div>
   );
 }

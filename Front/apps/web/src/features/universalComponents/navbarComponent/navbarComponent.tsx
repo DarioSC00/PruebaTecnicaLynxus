@@ -8,7 +8,6 @@ const routeNames: Record<string, string> = {
   "/": "Inicio",
   "/project": "Proyectos",
   "/user": "Usuarios",
-  "/task": "Tareas",
   // agregar más rutas si hace falta
 };
 

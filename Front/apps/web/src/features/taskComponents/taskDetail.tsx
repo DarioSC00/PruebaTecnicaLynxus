@@ -1,279 +1,182 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import DetalModal from "../universalComponents/detailUniversalComponents/detailModal";
+import styles from "./taskPage.module.css";
 import * as taskService from "./taskService/taskService";
 import * as commentService from "../commentComponents/commentService/commentService";
-import styles from "./taskPage.module.css";
+import type { TaskDetail, CommentItem } from "./taskService/taskService";
 
+// Aceptar onUpdate opcional para que el consumidor pueda pasarlo
 type Props = {
-  taskId: number | null;
+  taskId: number;
   open: boolean;
   onClose: () => void;
   onUpdate?: () => void;
 };
-
-export default function TaskDetail({ taskId, open, onClose, onUpdate }: Props) {
-  const [task, setTask] = useState<taskService.TaskDetail | null>(null);
-  const [comments, setComments] = useState<commentService.CommentItem[]>([]);
+// tipar explícitamente como React.FC ayuda en algunas verificaciones de JSX
+const TaskDetail: React.FC<Props> = ({ taskId, open, onClose, onUpdate }) => {
+  const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
   const [newComment, setNewComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  const currentUserId = getCurrentUserId();
 
   useEffect(() => {
-    if (!open || !taskId) return;
-    
-    let mounted = true;
-    setLoading(true);
-    
-    Promise.all([
-      taskService.getTask(taskId),
-      commentService.listComments(taskId),
-    ])
-      .then(([taskData, commentsData]) => {
-        if (!mounted) return;
-        setTask(taskData);
-        setComments(commentsData);
-      })
-      .catch((err) => {
-        console.error("Error loading task details:", err);
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
+    if (!open) return;
+    (async () => {
+      setLoading(true);
+      try {
+        const t = await taskService.getTask(taskId);
+        setTask(t ?? null);
+      } catch (err) {
+        console.error("Error loading task:", err);
+        setTask(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    loadComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, taskId]);
 
-    return () => {
-      mounted = false;
-    };
-  }, [taskId, open]);
-
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!taskId || !newComment.trim()) return;
-
-    setSubmitting(true);
+  const loadComments = async () => {
+    setCommentsLoading(true);
     try {
-      const comment = await commentService.createComment(taskId, { body: newComment });
-      setComments((prev) => [...prev, comment]);
-      setNewComment("");
+      const res = await commentService.listComments(taskId);
+      // esperar array
+      setComments(Array.isArray(res) ? res : (res?.items ?? []));
     } catch (err) {
-      console.error("Error adding comment:", err);
-      alert("Error al agregar comentario");
+      console.error("Error loading comments:", err);
+      setComments([]);
     } finally {
-      setSubmitting(false);
+      setCommentsLoading(false);
+    }
+  };
+
+  const handleCreateComment = async () => {
+    if (!newComment.trim()) return;
+    setCreating(true);
+    try {
+      await commentService.createComment(taskId, { body: newComment });
+      setNewComment("");
+      await loadComments();
+      onUpdate?.(); // notificar cambio al componente padre
+    } catch (err) {
+      console.error("Error creating comment:", err);
+      alert("No se pudo crear el comentario");
+    } finally {
+      setCreating(false);
     }
   };
 
   const handleDeleteComment = async (commentId: number) => {
-    if (!confirm("¿Eliminar este comentario?")) return;
-
+    if (!confirm("Eliminar comentario?")) return;
     try {
       await commentService.deleteComment(commentId);
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      setComments((c) => c.filter((x) => x.id !== commentId));
+      onUpdate?.(); // notificar cambio al componente padre
     } catch (err) {
       console.error("Error deleting comment:", err);
-      alert("Error al eliminar comentario");
+      alert("No se pudo eliminar el comentario");
     }
   };
 
-  if (!task && !loading) return null;
-
-  const getStatusLabel = (status?: string) => {
-    if (status === "todo") return "Por hacer";
-    if (status === "doing") return "En progreso";
-    if (status === "done") return "Completado";
-    return status;
-  };
-
-  const getPriorityLabel = (priority?: string) => {
-    if (priority === "low") return "Baja";
-    if (priority === "med") return "Media";
-    if (priority === "high") return "Alta";
-    return priority;
-  };
+  if (!open) return null;
 
   return (
-    <DetalModal open={open} onClose={onClose} title="Detalle de Tarea">
-      {loading ? (
-        <p style={{ padding: "2rem", textAlign: "center", color: "#6b7280" }}>Cargando...</p>
-      ) : task ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          {/* Información básica */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-            <dl className={styles.keyValue}>
-              <dt>Título</dt>
-              <dd>{task.title}</dd>
-            </dl>
+    <div className={styles.modalOverlay} role="dialog" aria-modal="true" aria-labelledby="task-detail-title">
+      <div className={styles.modal}>
+        <header className={styles.modalHeader}>
+          <h3 id="task-detail-title">{loading ? "Cargando…" : task?.title ?? "Tarea"}</h3>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Cerrar">×</button>
+        </header>
 
-            <dl className={styles.keyValue}>
-              <dt>Proyecto</dt>
-              <dd>Proyecto #{task.project_id}</dd>
-            </dl>
+        <main className={styles.modalBody}>
+          {loading ? (
+            <div>Cargando detalles…</div>
+          ) : task ? (
+            <>
+              <section className={styles.section}>
+                <h4>Información</h4>
+                <div className={styles.row}><strong>ID:</strong> #{task.id}</div>
+                <div className={styles.row}><strong>Proyecto ID:</strong> #{task.project_id}</div>
+                <div className={styles.row}><strong>Asignado a:</strong> {task.assignee?.name ?? task.assignee?.email ?? "-"}</div>
+                <div className={styles.row}><strong>Estado:</strong> {task.status}</div>
+                <div className={styles.row}><strong>Prioridad:</strong> {task.priority}</div>
+                <div className={styles.row}><strong>Vencimiento:</strong> {task.due_date ? new Date(task.due_date).toLocaleString("es-ES") : "-"}</div>
+                <div className={styles.row}><strong>Creado:</strong> {task.created_at ? new Date(task.created_at).toLocaleString("es-ES") : "-"}</div>
+                <div className={styles.row}><strong>Última actualización:</strong> {task.updated_at ? new Date(task.updated_at).toLocaleString("es-ES") : "-"}</div>
+              </section>
 
-            <dl className={styles.keyValue}>
-              <dt>Estado</dt>
-              <dd>
-                <span className={styles.statusBadge} data-status={task.status}>
-                  {getStatusLabel(task.status)}
-                </span>
-              </dd>
-            </dl>
+              <section className={styles.section}>
+                <h4>Descripción</h4>
+                <p className={styles.description}>{task.description ?? "-"}</p>
+              </section>
 
-            <dl className={styles.keyValue}>
-              <dt>Prioridad</dt>
-              <dd>
-                <span className={styles.priorityBadge} data-priority={task.priority}>
-                  {getPriorityLabel(task.priority)}
-                </span>
-              </dd>
-            </dl>
+              <section className={styles.section}>
+                <h4>Comentarios</h4>
 
-            {task.due_date && (
-              <dl className={styles.keyValue}>
-                <dt>Fecha límite</dt>
-                <dd>
-                  {new Date(task.due_date).toLocaleDateString("es-ES", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </dd>
-              </dl>
-            )}
-
-            {task.assignee && (
-              <dl className={styles.keyValue}>
-                <dt>Asignado a</dt>
-                <dd>{task.assignee.name || task.assignee.email}</dd>
-              </dl>
-            )}
-          </div>
-
-          {/* Descripción */}
-          {task.description && (
-            <dl className={styles.keyValue}>
-              <dt>Descripción</dt>
-              <dd style={{ whiteSpace: "pre-wrap" }}>{task.description}</dd>
-            </dl>
-          )}
-
-          {/* Comentarios */}
-          <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: "1.5rem" }}>
-            <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "1rem", color: "#111827" }}>
-              Comentarios ({comments.length})
-            </h3>
-
-            {/* Lista de comentarios */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "1.5rem" }}>
-              {comments.length === 0 ? (
-                <p style={{ color: "#9ca3af", fontSize: "0.875rem", textAlign: "center", padding: "1rem" }}>
-                  No hay comentarios aún
-                </p>
-              ) : (
-                comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    style={{
-                      padding: "1rem",
-                      background: "#f9fafb",
-                      borderRadius: "8px",
-                      border: "1px solid #e5e7eb",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#111827" }}>
-                          {comment.author?.name || "Usuario"}
-                        </span>
-                        <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
-                          {comment.created_at
-                            ? new Date(comment.created_at).toLocaleDateString("es-ES", {
-                                day: "2-digit",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : ""}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteComment(comment.id)}
-                        style={{
-                          padding: "0.25rem 0.5rem",
-                          fontSize: "0.75rem",
-                          color: "#ef4444",
-                          background: "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          borderRadius: "4px",
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "#fee2e2")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                    <p style={{ margin: 0, fontSize: "0.875rem", color: "#374151", whiteSpace: "pre-wrap" }}>
-                      {comment.body}
-                    </p>
+                <div className={styles.commentForm}>
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Escribe un comentario..."
+                    rows={3}
+                    aria-label="Nuevo comentario"
+                  />
+                  <div className={styles.formActions}>
+                    <button onClick={handleCreateComment} disabled={creating || !newComment.trim()}>
+                      {creating ? "Enviando…" : "Comentar"}
+                    </button>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
 
-            {/* Formulario de nuevo comentario */}
-            <form onSubmit={handleAddComment} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Escribe un comentario..."
-                rows={3}
-                style={{
-                  padding: "0.75rem",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  fontSize: "0.875rem",
-                  outline: "none",
-                  resize: "vertical",
-                  fontFamily: "inherit",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#6366f1";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#e5e7eb";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              />
-              <button
-                type="submit"
-                disabled={!newComment.trim() || submitting}
-                style={{
-                  padding: "0.625rem 1rem",
-                  background: newComment.trim() ? "#6366f1" : "#e5e7eb",
-                  color: newComment.trim() ? "white" : "#9ca3af",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  cursor: newComment.trim() ? "pointer" : "not-allowed",
-                  alignSelf: "flex-end",
-                  transition: "all 0.15s ease",
-                }}
-                onMouseEnter={(e) => {
-                  if (newComment.trim()) e.currentTarget.style.background = "#4f46e5";
-                }}
-                onMouseLeave={(e) => {
-                  if (newComment.trim()) e.currentTarget.style.background = "#6366f1";
-                }}
-              >
-                {submitting ? "Enviando..." : "Agregar comentario"}
-              </button>
-            </form>
-          </div>
-        </div>
-      ) : null}
-    </DetalModal>
+                {commentsLoading ? (
+                  <div>Cargando comentarios…</div>
+                ) : comments.length === 0 ? (
+                  <div className={styles.emptyState}>Sin comentarios</div>
+                ) : (
+                  <ul className={styles.commentsList}>
+                    {comments.map((c) => (
+                      <li key={c.id} className={styles.commentItem}>
+                        <div className={styles.commentHeader}>
+                          <strong>{c.author?.name ?? "Usuario"}</strong>
+                          <span className={styles.commentDate}>{c.created_at ? new Date(c.created_at).toLocaleString("es-ES") : ""}</span>
+                        </div>
+                        <div className={styles.commentBody}>{c.body}</div>
+                        {currentUserId && c.author?.id === currentUserId && (
+                          <div className={styles.commentActions}>
+                            <button className={styles.deleteCommentBtn} onClick={() => handleDeleteComment(c.id)}>Eliminar</button>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </>
+          ) : (
+            <div>No se encontró la tarea</div>
+          )}
+        </main>
+      </div>
+    </div>
   );
 }
+
+function getCurrentUserId(): number | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return null;
+    const u = JSON.parse(raw);
+    return typeof u?.id === "number" ? u.id : null;
+  } catch {
+    return null;
+  }
+}
+
+export default TaskDetail;

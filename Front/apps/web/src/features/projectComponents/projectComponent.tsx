@@ -1,124 +1,206 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import TableUniversal from "../universalComponents/tableUniversalComponents/tableUniversal";
-import ProjectCreateComponent from "./projectCreateComponent";
-import ProjectDetail from "./detailProject";
-import * as projectService from "./projectService/projectService";
 import styles from "./projectPage.module.css";
+import * as projectService from "./projectService/projectService";
+import TaskDetail from "../../features/taskComponents/taskDetail"; // ajustar si la ruta difiere
+
+// Tipos concretos para evitar `any`
+type Task = {
+  id: number;
+  title: string;
+  description?: string;
+  status: "todo" | "doing" | "done" | string;
+  priority: "low" | "med" | "high" | string;
+  due_date?: string | null;
+  assignee_id?: number | null;
+};
+
+type ProjectItem = {
+  id: number;
+  name: string;
+  description?: string;
+  archived?: boolean;
+  owner?: { id: number; name?: string; email?: string } | null;
+  owner_id?: number;
+  tasks?: Task[]; // ahora tipado
+};
+
+type Paginated<T> = {
+  items: T[];
+  total?: number;
+  page?: number;
+  page_size?: number;
+};
+
+type ServiceFunc = (...args: unknown[]) => Promise<unknown>;
 
 export default function ProjectList() {
-  const [projects, setProjects] = useState<projectService.ProjectItem[]>([]);
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [query, setQuery] = useState("");
-  const [reloadKey, setReloadKey] = useState(0);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [tasksByProject, setTasksByProject] = useState<Record<number, Task[]>>({});
+  const [tasksLoading, setTasksLoading] = useState<Record<number, boolean>>({});
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-    React.startTransition(() => setLoading(true));
     (async () => {
       try {
-        const res = await projectService.listProjects({ q: query, page: 1, page_size: 50 });
-        if (!mounted) return;
-        React.startTransition(() => setProjects(res.items));
-        console.log("✅ listProjects response:", res);
+        setLoading(true);
+
+        // Tipado seguro para el service
+        const svc = projectService as unknown as Record<string, ServiceFunc>;
+        let res: unknown;
+
+        if (typeof svc.listProjects === "function") {
+          res = await svc.listProjects();
+        } else if (typeof svc.list === "function") {
+          res = await svc.list();
+        } else if (typeof svc.getProjects === "function") {
+          res = await svc.getProjects();
+        } else {
+          throw new Error(
+            "projectService no exporta listProjects, list ni getProjects. Revisa los nombres exportados."
+          );
+        }
+
+        // Normalizar respuesta a ProjectItem[]
+        let items: ProjectItem[] = [];
+        if (Array.isArray(res)) {
+          items = res as ProjectItem[];
+        } else if (res && typeof res === "object" && "items" in (res as object)) {
+          items = (res as Paginated<ProjectItem>).items ?? [];
+        } else {
+          items = [];
+        }
+
+        setProjects(items);
       } catch (err) {
-        console.error("❌ listProjects error:", err);
-        if (mounted) React.startTransition(() => setProjects([]));
+        console.error("Error loading projects:", err);
       } finally {
-        if (mounted) React.startTransition(() => setLoading(false));
+        setLoading(false);
       }
     })();
-    return () => { mounted = false; };
-  }, [query, reloadKey]);
+  }, []);
 
-  const columns = [
-    { 
-      id: "project", 
-      header: "Proyecto", 
-      accessor: (p: projectService.ProjectItem) => (
-        <div className={styles.projectCell}>
-          <div className={styles.projectName}>{p.name}</div>
-          <div className={styles.projectDescription}>{p.description || "Sin descripción"}</div>
-        </div>
-      )
-    },
-    { 
-      id: "status", 
-      header: "Estado", 
-      accessor: (p: projectService.ProjectItem) => (
-        <span className={styles.statusBadge} data-status={p.status}>
-          {p.status === 'in_progress' ? 'En progreso' : 
-           p.status === 'completed' ? 'Completado' : 
-           p.status === 'cancelled' ? 'Cancelado' : 'Pendiente'}
-        </span>
-      )
-    },
-    { 
-      id: "created_at", 
-      header: "Creado", 
-      accessor: (p: projectService.ProjectItem) => {
-        if (!p.created_at) return "-";
-        const date = new Date(p.created_at);
-        return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+  const toggleExpand = async (projectId: number) => {
+    const isOpen = !!expanded[projectId];
+    setExpanded((s) => ({ ...s, [projectId]: !isOpen }));
+
+    if (!isOpen && !tasksByProject[projectId]) {
+      try {
+        setTasksLoading((s) => ({ ...s, [projectId]: true }));
+        const res = await projectService.getProject(projectId);
+        const tasks: Task[] = (res?.tasks ?? []) as Task[];
+        setTasksByProject((s) => ({ ...s, [projectId]: tasks }));
+      } catch (err) {
+        console.error("Error loading project tasks:", err);
+        setTasksByProject((s) => ({ ...s, [projectId]: [] }));
+      } finally {
+        setTasksLoading((s) => ({ ...s, [projectId]: false }));
       }
-    },
-  ];
+    }
+  };
+
+  const openTask = (taskId: number) => {
+    setSelectedTaskId(taskId);
+    setTaskModalOpen(true);
+  };
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.breadcrumb}>
-        <span className={styles.breadcrumbText}>Proyectos</span>
-      </div>
-      
-      <header className={styles.pageHeader}>
-        <h2 className={styles.pageCount}>
-          {loading ? "Cargando..." : `${projects.length} proyecto${projects.length !== 1 ? 's' : ''}`}
-        </h2>
-        <div className={styles.pageActions}>
-          <input
-            className={styles.searchInput}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar proyectos..."
-          />
-          <ProjectCreateComponent defaultOpen={false} onCreated={() => setReloadKey(k => k + 1)} />
+      <div className={styles.headerRow}>
+        <div>
+          <h2>Proyectos</h2>
+          <div className={styles.subtitle}>{projects.length} proyecto(s)</div>
         </div>
-      </header>
-
-      <div className={styles.pageContent}>
-        {loading && <p className={styles.loadingState}>Cargando proyectos...</p>}
-        {!loading && projects.length === 0 && (
-          <div className={styles.emptyState}>
-            <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-            <p>No hay proyectos</p>
-            <small>Crea tu primer proyecto para comenzar</small>
-          </div>
-        )}
-        {!loading && projects.length > 0 && (
-          <TableUniversal<projectService.ProjectItem>
-            columns={columns}
-            data={projects}
-            loading={loading}
-            rowKey={(p) => p.id}
-            onRowClick={(p) => { setSelectedId(p.id); setOpen(true); }}
-            actions={(p) => (
-              <button
-                className={styles.btn}
-                onClick={(e) => { e.stopPropagation(); setSelectedId(p.id); setOpen(true); }}
-              >
-                Ver detalles
-              </button>
-            )}
-          />
-        )}
       </div>
 
-      <ProjectDetail projectId={selectedId} open={open} onClose={() => { setOpen(false); setSelectedId(null); }} />
+      {loading ? (
+        <div className={styles.loadingState}>Cargando proyectos…</div>
+      ) : (
+        <div className={styles.tableCard}>
+          <div className={styles.tableHeader}>
+            <div>Proyecto</div>
+            <div>Estado</div>
+            <div>Creado</div>
+            <div>Acciones</div>
+          </div>
+
+          <div>
+            {projects.map((p) => (
+              <div key={p.id} className={styles.tableRow}>
+                <div className={styles.rowContent}>
+                  <div className={styles.projectInfo}>
+                    <button
+                      className={styles.expandBtn}
+                      onClick={() => toggleExpand(p.id)}
+                      aria-expanded={!!expanded[p.id]}
+                      aria-controls={`project-tasks-${p.id}`}
+                    >
+                      {expanded[p.id] ? "▾" : "▸"}
+                    </button>
+                    <div>
+                      <div className={styles.projectTitle}>{p.name}</div>
+                      <div className={styles.projectDesc}>{p.description}</div>
+                    </div>
+                  </div>
+
+                  <div className={styles.center}>{p.archived ? "Archivado" : "Activo"}</div>
+                  <div className={styles.center}>
+                    {p.owner?.name || p.owner?.email || "-"}
+                  </div>
+                  <div className={styles.center}>
+                    <button className={styles.linkBtn} onClick={() => toggleExpand(p.id)}>
+                      Ver tareas
+                    </button>
+                  </div>
+                </div>
+
+                {/* tasks panel */}
+                {expanded[p.id] && (
+                  <div id={`project-tasks-${p.id}`} className={styles.tasksPanel}>
+                    {tasksLoading[p.id] ? (
+                      <div>Cargando tareas…</div>
+                    ) : (tasksByProject[p.id] ?? []).length === 0 ? (
+                      <div className={styles.emptyState}>No hay tareas</div>
+                    ) : (
+                      <ul className={styles.taskList}>
+                        {(tasksByProject[p.id] ?? []).map((t: Task) => (
+                          <li key={t.id} className={styles.taskItem}>
+                            <div>
+                              <button className={styles.taskLink} onClick={() => openTask(t.id)}>
+                                {t.title}
+                              </button>
+                              <div className={styles.metaSmall}>{t.status} — {t.priority}</div>
+                            </div>
+                            <div className={styles.taskRight}>
+                              <div className={styles.metaSmall}>{t.due_date ? new Date(t.due_date).toLocaleDateString() : "-"}</div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TaskDetail modal */}
+      {selectedTaskId && (
+        <TaskDetail
+          taskId={selectedTaskId}
+          open={taskModalOpen}
+          onClose={() => {
+            setTaskModalOpen(false);
+            setSelectedTaskId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

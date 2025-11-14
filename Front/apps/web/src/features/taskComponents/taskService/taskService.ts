@@ -111,15 +111,9 @@ export async function listTasks(params: ListTasksParams = {}): Promise<{ items: 
 /**
  * Obtener detalle de una tarea
  */
-export async function getTask(taskId: number): Promise<TaskDetail> {
-  try {
-    const response = await api.get(`/tasks/${taskId}`);
-    console.log("[taskService] getTask response:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("[taskService] getTask error:", error);
-    throw error;
-  }
+export async function getTask(taskId: number) {
+  const res = await api.get(`/tasks/${taskId}`);
+  return res.data;
 }
 
 /**
