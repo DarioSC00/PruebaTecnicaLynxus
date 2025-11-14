@@ -6,6 +6,8 @@ import * as projectService from "./projectService/projectService";
 import TaskDetail from "../taskComponents/taskDetail"; // ajustar si la ruta difiere
 import ProjectDetail from "./detailProject";
 import TaskCreate from "../taskComponents/taskCreateComponent";
+import ProjectCreateComponent from "./projectCreateComponent";
+import AddMembersModal from "./addMembersModal";
 
 // Tipos concretos para evitar `any`
 type Task = {
@@ -23,6 +25,7 @@ type ProjectItem = {
   name: string;
   description?: string;
   archived?: boolean;
+  created_at?: string;
   owner?: { id: number; name?: string; email?: string } | null;
   owner_id?: number;
   tasks?: Task[]; // ahora tipado
@@ -46,10 +49,11 @@ export default function ProjectList() {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
 
-  // estados para modales de proyecto / crear tarea
+  // states for project modals / create task
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [projectDetailOpen, setProjectDetailOpen] = useState(false);
   const [taskCreateOpenFor, setTaskCreateOpenFor] = useState<number | null>(null);
+  const [addMembersOpenFor, setAddMembersOpenFor] = useState<number | null>(null);
   const reloadTasksFor = async (projectId?: number) => {
     if (!projectId) return;
     try {
@@ -142,20 +146,21 @@ export default function ProjectList() {
     <div className={styles.pageContainer}>
       <div className={styles.headerRow}>
         <div>
-          <h2>Proyectos</h2>
-          <div className={styles.subtitle}>{projects.length} proyecto(s)</div>
+          <h2>Projects</h2>
+          <div className={styles.subtitle}>{projects.length} project(s)</div>
         </div>
+        <ProjectCreateComponent onCreated={() => window.location.reload()} />
       </div>
 
       {loading ? (
-        <div className={styles.loadingState}>Cargando proyectos…</div>
+        <div className={styles.loadingState}>Loading projects…</div>
       ) : (
         <div className={styles.tableCard}>
           <div className={styles.tableHeader}>
-            <div>Proyecto</div>
-            <div>Estado</div>
-            <div>Creado</div>
-            <div>Acciones</div>
+            <div>Project</div>
+            <div>Status</div>
+            <div>Created</div>
+            <div>Actions</div>
           </div>
 
           <div>
@@ -187,32 +192,36 @@ export default function ProjectList() {
                     </div>
                   </div>
 
-                  <div className={styles.center}>{p.archived ? "Archivado" : "Activo"}</div>
+                  <div className={styles.center}>{p.archived ? "Archived" : "Active"}</div>
                   <div className={styles.center}>
-                    {p.owner?.name || p.owner?.email || "-"}
+                    {p.created_at ? new Date(p.created_at).toLocaleString() : "-"}
                   </div>
-                  <div className={styles.center}>
+                  <div className={`${styles.center} ${styles.actionsCell}`}>
                     <div className={styles.actionsRow}>
                       <button
-                        className={styles.actionBtn}
-                        onClick={() => {
-                          // placeholder para asignar proyecto a usuarios
-                          alert("Funcionalidad 'Asignar proyecto' por implementar");
-                        }}
-                        aria-label={`Asignar proyecto ${p.name} a usuarios`}
+                        title="Add task"
+                        className={styles.iconBtn}
+                        onClick={(e) => { e.stopPropagation(); setTaskCreateOpenFor(p.id); }}
+                        aria-label={`Create task in project ${p.name}`}
                       >
-                        Asignar proyecto
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 5v14"></path>
+                          <path d="M5 12h14"></path>
+                        </svg>
                       </button>
 
                       <button
-                        className={styles.primaryBtn}
-                        onClick={() => {
-                          // abrir modal de creación de tarea para este proyecto
-                          setTaskCreateOpenFor(p.id);
-                        }}
-                        aria-label={`Agregar tarea al proyecto ${p.name}`}
+                        title="Add members"
+                        className={styles.iconBtn}
+                        onClick={(e) => { e.stopPropagation(); setAddMembersOpenFor(p.id); }}
+                        aria-label={`Add members to ${p.name}`}
                       >
-                        Agregar tarea
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="9" cy="7" r="4"></circle>
+                          <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
                       </button>
                     </div>
                   </div>
@@ -222,9 +231,9 @@ export default function ProjectList() {
                 {expanded[p.id] && (
                   <div id={`project-tasks-${p.id}`} className={styles.tasksPanel}>
                     {tasksLoading[p.id] ? (
-                      <div>Cargando tareas…</div>
-                    ) : (tasksByProject[p.id] ?? []).length === 0 ? (
-                      <div className={styles.emptyState}>No hay tareas</div>
+                      <div>Loading tasks…</div>
+                    ) : (tasksByProject[p.id] || []).length === 0 ? (
+                      <div className={styles.emptyState}>No tasks</div>
                     ) : (
                       <ul className={styles.taskList}>
                         {(tasksByProject[p.id] ?? []).map((t: Task) => (
@@ -274,6 +283,18 @@ export default function ProjectList() {
             setTaskCreateOpenFor(null);
           }}
           onClose={() => setTaskCreateOpenFor(null)}
+        />
+      )}
+
+      {/* Add Members modal */}
+      {addMembersOpenFor !== null && (
+        <AddMembersModal
+          projectId={addMembersOpenFor}
+          open={true}
+          onClose={() => setAddMembersOpenFor(null)}
+          onMemberAdded={() => {
+            // Opcional: recargar proyecto si necesitas actualizar la lista
+          }}
         />
       )}
 

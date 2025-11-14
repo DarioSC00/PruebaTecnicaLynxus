@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerWithEmail } from "./registerService/registerService";
 import styles from "./registerPage.module.css";
+import { toast } from "react-toastify";
 
 type RegisterFormData = {
   name: string;
@@ -31,6 +32,7 @@ export default function Register() {
 
     try {
       await registerWithEmail(payload);
+      toast.success("Registration successful! Welcome to Lynxus Task.");
       // redirigir a la sección de usuarios
       router.push("/user");
     } catch (err: unknown) {
@@ -41,7 +43,9 @@ export default function Register() {
             (err as any).response?.data?.detail
           : undefined;
       const message = detail ?? (err instanceof Error ? err.message : String(err));
-      setError(message || "Error al registrar");
+      const errorMessage = message || "Registration error";
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -121,7 +125,7 @@ export default function Register() {
               </div>
 
               <button type="submit" className={styles.submitButton} disabled={loading}>
-                {loading ? "Registrando..." : "Registrarse"}
+                {loading ? "Registering..." : "Sign up"}
               </button>
 
               {error && <p role="alert" className={styles.errorMessage}>{error}</p>}

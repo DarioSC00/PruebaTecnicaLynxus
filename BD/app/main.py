@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Importar routers existentes
-from app.api.routes import userRoutes, projectRoutes, taskRoutes, commentRoutes
+from app.api.routes import userRoutes, projectRoutes, taskRoutes, commentRoutes, projectCommentRoutes, projectMemberRoutes
 
 app = FastAPI(title="API PruebaTecnicaLynxus")
 
@@ -25,7 +25,10 @@ app.include_router(userRoutes.router, prefix="/users", tags=["users"])
 app.include_router(projectRoutes.router, prefix="/projects", tags=["projects"])
 # Incluir taskRoutes sin prefijo porque las rutas dentro ya contienen /tasks y /projects/{id}/tasks
 app.include_router(taskRoutes.router)
-app.include_router(commentRoutes.router, prefix="/comments", tags=["comments"])
+# Incluir commentRoutes sin prefijo porque las rutas ya contienen /tasks/{id}/comments y /comments/{id}
+app.include_router(commentRoutes.router, tags=["comments"])
+app.include_router(projectCommentRoutes.router, prefix="/projects", tags=["project-comments"])
+app.include_router(projectMemberRoutes.router, prefix="/projects", tags=["project-members"])
 
 @app.get("/", tags=["health"])
 def read_root():

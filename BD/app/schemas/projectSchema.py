@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 from .userSchema import UserOut
 from .taskSchema import TaskOut
+from .commentSchema import CommentOut
 
 # --- Crear Proyecto ---
 class ProjectCreate(BaseModel):
@@ -36,7 +37,9 @@ class ProjectOut(BaseModel):
     description: Optional[str] = None
     archived: bool = False
     owner: Optional[UserOut] = None
+    members: List[UserOut] = []  # Usuarios que trabajan en el proyecto
     tasks: List[TaskOut] = []
+    comments: List[CommentOut] = []
 
     class Config:
         from_attributes = True

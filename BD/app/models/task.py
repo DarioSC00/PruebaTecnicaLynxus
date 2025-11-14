@@ -4,13 +4,13 @@ from sqlalchemy.sql import func
 from app.core.database import Base
 import enum
 
-# Definir los estados como Enum
+# Define statuses as Enum
 class TaskStatus(str, enum.Enum):
     TODO = "todo"
     DOING = "doing" 
     DONE = "done"
 
-# Definir las prioridades como Enum  
+# Define priorities as Enum  
 class TaskPriority(str, enum.Enum):
     LOW = "low"
     MEDIUM = "medium"
@@ -19,17 +19,17 @@ class TaskPriority(str, enum.Enum):
 class Task(Base):
     __tablename__ = "tasks"
     
-    # Campos principales
+    # Main fields
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(200), nullable=False, index=True)  # Para búsqueda
-    description = Column(Text, nullable=True)  # Text para descripciones largas
+    title = Column(String(200), nullable=False, index=True)  # For search
+    description = Column(Text, nullable=True)  # Text for long descriptions
     
-    # Estados y prioridad con Enum
+    # Status and priority with Enum
     status = Column(Enum(TaskStatus, values_callable=lambda obj: [e.value for e in obj]), nullable=False, default=TaskStatus.TODO, index=True)
     priority = Column(Enum(TaskPriority, values_callable=lambda obj: [e.value for e in obj]), nullable=False, default=TaskPriority.MEDIUM, index=True)
     
-    # Fecha límite
-    due_date = Column(DateTime(timezone=True), nullable=True, index=True)  # Index para filtrar vencidas
+    # Due date
+    due_date = Column(DateTime(timezone=True), nullable=True, index=True)  # Index to filter overdue
     
     # Foreign Keys
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)

@@ -15,14 +15,14 @@ from app.models.comment import Comment
 
 router = APIRouter()
 
-# === RUTAS DE PROYECTOS ===
+# === PROJECT ROUTES ===
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(
     project_in: ProjectCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Crear un nuevo proyecto"""
+    """Create a new project"""
     try:
         project = project_crud.create(
             db=db,
@@ -31,12 +31,12 @@ def create_project(
         )
         return project
     except Exception as e:
-        print(f"❌ Error creando proyecto: {e}")
+        print(f"❌ Error creating project: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al crear proyecto: {str(e)}"
+            detail=f"Error creating project: {str(e)}"
         )
 
 
@@ -48,7 +48,7 @@ def get_projects(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Obtener lista de proyectos del usuario actual"""
+    """Get list of projects for the current user"""
     projects = project_crud.get_all(
         db=db,
         owner_id=current_user.id,
@@ -59,7 +59,7 @@ def get_projects(
     return projects
 
 
-# Endpoint GET /{project_id} movido a la línea 136 (read_project)
+# Endpoint GET /{project_id} moved to line 136 (read_project)
 
 
 @router.put("/{project_id}", response_model=ProjectResponse)
@@ -69,7 +69,7 @@ def update_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Actualizar proyecto por ID"""
+    """Update project by ID"""
     updated_project = project_crud.update(
         db=db,
         project_id=project_id,
@@ -79,7 +79,7 @@ def update_project(
     if not updated_project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Proyecto no encontrado"
+            detail="Project not found"
         )
     return updated_project
 
@@ -90,7 +90,7 @@ def delete_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Eliminar proyecto por ID"""
+    """Delete project by ID"""
     success = project_crud.delete(
         db=db, 
         project_id=project_id, 
@@ -99,9 +99,9 @@ def delete_project(
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Proyecto no encontrado"
+            detail="Project not found"
         )
-    return {"message": "Proyecto eliminado correctamente"}
+    return {"message": "Project deleted successfully"}
 
 
 @router.get("/user/{user_id}", response_model=List[ProjectResponse])
@@ -109,7 +109,7 @@ def get_projects_by_user(
     user_id: int,
     db: Session = Depends(get_db)
 ):
-    """Obtener proyectos por ID de usuario"""
+    """Get projects by user ID"""
     projects = project_crud.get_all(db=db, owner_id=user_id)
     return projects
 
@@ -119,11 +119,13 @@ def read_project(
     project_id: int, 
     db: Session = Depends(get_db)
 ):
-    """Obtener proyecto por ID con todas sus tareas"""
+    """Get project by ID with all its tasks, members and comments"""
     project = db.query(Project).options(
         selectinload(Project.owner),
+        selectinload(Project.members),  # Load project members
         selectinload(Project.tasks).selectinload(Task.assignee),
-        selectinload(Project.tasks).selectinload(Task.comments).selectinload(Comment.author)
+        selectinload(Project.tasks).selectinload(Task.comments).selectinload(Comment.author),
+        selectinload(Project.comments).selectinload(Comment.author)
     ).filter(Project.id == project_id).first()
     
     if not project:

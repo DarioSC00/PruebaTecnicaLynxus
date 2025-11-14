@@ -35,7 +35,7 @@ export default function UserList() {
   const columns = [
     { 
       id: "user", 
-      header: "Usuario", 
+      header: "User", 
       accessor: (u: userService.UserItem) => (
         <div className={styles.userCell}>
           <div className={styles.avatar}>
@@ -50,20 +50,20 @@ export default function UserList() {
     },
     { 
       id: "is_active", 
-      header: "Estado", 
+      header: "Status", 
       accessor: (u: userService.UserItem) => (
         <span className={styles.activeBadge} data-active={u.is_active ? "true" : "false"}>
-          {u.is_active ? "Activo" : "Inactivo"}
+          {u.is_active ? "Active" : "Inactive"}
         </span>
       )
     },
     { 
       id: "created_at", 
-      header: "Registrado", 
+      header: "Registered", 
       accessor: (u: userService.UserItem) => {
         if (!u.created_at) return "-";
         const date = new Date(u.created_at);
-        return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+        return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
       }
     },
   ];
@@ -71,32 +71,32 @@ export default function UserList() {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.breadcrumb}>
-        <span className={styles.breadcrumbText}>Usuarios</span>
+        <span className={styles.breadcrumbText}>Users</span>
       </div>
       
       <header className={styles.pageHeader}>
         <h2 className={styles.pageCount}>
-          {loading ? "Cargando..." : `${users.length} usuario${users.length !== 1 ? 's' : ''}`}
+          {loading ? "Loading..." : `${users.length} user${users.length !== 1 ? 's' : ''}`}
         </h2>
         <div className={styles.pageActions}>
           <input
             className={styles.searchInput}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar usuarios..."
+            placeholder="Search users..."
           />
         </div>
       </header>
 
       <div className={styles.pageContent}>
-        {loading && <p className={styles.loadingState}>Cargando usuarios...</p>}
+        {loading && <p className={styles.loadingState}>Loading users...</p>}
         {!loading && users.length === 0 && (
           <div className={styles.emptyState}>
             <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
               <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            <p>No hay usuarios registrados</p>
-            <small>Los usuarios se crean mediante el formulario de registro</small>
+            <p>No registered users</p>
+            <small>Users are created through the registration form</small>
           </div>
         )}
         {!loading && users.length > 0 && (
@@ -111,7 +111,7 @@ export default function UserList() {
                 className={styles.btn}
                 onClick={(e) => { e.stopPropagation(); setSelectedId(u.id); setOpen(true); }}
               >
-                Ver detalles
+                View details
               </button>
             )}
           />

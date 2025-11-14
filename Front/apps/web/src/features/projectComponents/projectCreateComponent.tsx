@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import CreateUniversalModal from "../universalComponents/createUniversalComponents/createUniversalModal";
 import * as projectService from "./projectService/projectService";
 import styles from "./projectPage.module.css";
+import { toast } from "react-toastify";
 
 type Props = {
   defaultOpen?: boolean;
@@ -29,11 +30,13 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
     try {
       // pasar directamente el objeto tipado
       await projectService.createProject(values);
+      toast.success("Project created successfully");
       setOpen(false);
       if (typeof onCreated === "function") onCreated();
       router.push("/project");
     } catch (err: unknown) {
       console.error("createProject error:", err);
+      toast.error("Error creating project. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -47,71 +50,67 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
   return (
     <>
       <button className={styles.btn} onClick={() => setOpen(true)}>
-        Nuevo proyecto
+        New Project
       </button>
 
-      {/* Usar el alias de tipo para evitar errores de JSX con genéricos */}
+      {/* Use type alias to avoid JSX errors with generics */}
       <CreateUniversalModal<CreateProjectInput>
         open={open}
         onClose={() => setOpen(false)}
-        title="Crear proyecto"
-        submitLabel={submitting ? "Creando…" : "Crear"}
+        title="Create Project"
+        submitLabel={submitting ? "Creating…" : "Create"}
         initialValues={{ name: "", description: "", owner: "", status: "" } as CreateProjectInput}
         onSubmit={handleCreate}
         renderForm={({ values, setValues }) => (
           <>
-            <label className={styles.label}>
-              Nombre
+            <div>
+              <label htmlFor="project-name">
+                Name <span style={{ color: "#ef4444" }}>*</span>
+              </label>
               <input
+                id="project-name"
                 value={String(values.name ?? "")}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setValues((prev: CreateProjectInput) => ({ ...prev, name: e.target.value }))
                 }
-                placeholder="Nombre del proyecto"
+                placeholder="Project name"
                 required
               />
-            </label>
+            </div>
 
-            <label className={styles.label}>
-              Descripción
+            <div>
+              <label htmlFor="project-description">Description</label>
               <textarea
+                id="project-description"
                 value={String(values.description ?? "")}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                   setValues((prev: CreateProjectInput) => ({ ...prev, description: e.target.value }))
                 }
-                placeholder="Descripción corta"
+                placeholder="Short description"
                 rows={4}
               />
-            </label>
+            </div>
 
-            <label className={styles.label}>
-              Propietario
-              <input
-                value={String(values.owner ?? "")}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setValues((prev: CreateProjectInput) => ({ ...prev, owner: e.target.value }))
-                }
-                placeholder="Nombre del propietario"
-              />
-            </label>
-
-            <label className={styles.label}>
-              Estado
+            <div>
+              <label htmlFor="project-status">
+                Status <span style={{ color: "#ef4444" }}>*</span>
+              </label>
               <select
+                id="project-status"
                 value={String(values.status ?? "")}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setValues((prev: CreateProjectInput) => ({ ...prev, status: e.target.value }))
                 }
                 required
               >
-                <option value="">Selecciona estado</option>
+                <option value="">Select status</option>
                 {STATUS_OPTIONS.map((s: string) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
           </>
         )}
       />

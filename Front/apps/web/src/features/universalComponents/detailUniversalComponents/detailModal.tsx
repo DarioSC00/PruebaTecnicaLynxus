@@ -48,7 +48,7 @@ export default function DetalModal<T = unknown>({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={title ?? "Detalle"}
+        aria-label={title ?? "Detail"}
         className={`${styles.container} ${className ?? ""}`}
         style={{ position: "relative", margin: "4vh auto", zIndex: 10000 }}
       >
@@ -56,7 +56,7 @@ export default function DetalModal<T = unknown>({
           {title ? <h3 style={{ margin: 0 }}>{title}</h3> : <div />}
           <button
             onClick={onClose}
-            aria-label="Cerrar"
+            aria-label="Close"
             style={{
               background: "transparent",
               border: "none",
@@ -82,7 +82,7 @@ export default function DetalModal<T = unknown>({
               </div>
             ))
           ) : (
-            <p className={styles.meta}>Sin datos para mostrar</p>
+            <p className={styles.meta}>No data to display</p>
           )}
         </div>
       </div>

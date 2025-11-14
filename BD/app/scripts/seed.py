@@ -1,15 +1,15 @@
 """
-Script de seed para poblar la base de datos con datos de ejemplo.
+Seed script to populate the database with sample data.
 
-Crea:
-- 3 usuarios
-- 2 proyectos
-- 10+ tareas con diferentes estados y prioridades
-- Comentarios en las tareas
+Creates:
+- 3 users
+- 2 projects
+- 10+ tasks with different statuses and priorities
+- Comments on tasks
 
-Ejecutar:
+Run:
     python -m app.scripts.seed
-O desde la raíz del proyecto BD:
+Or from the BD project root:
     python app/scripts/seed.py
 """
 
@@ -24,22 +24,22 @@ from app.models.comment import Comment
 
 
 def create_seed_data():
-    """Crear datos de ejemplo"""
+    """Create sample data"""
     db: Session = SessionLocal()
     
     try:
-        print("🌱 Iniciando seed de datos...")
+        print("🌱 Starting data seed...")
         
-        # Limpiar datos existentes (opcional, comentar si no quieres borrar)
-        print("🧹 Limpiando datos existentes...")
+        # Clean existing data (optional, comment if you don't want to delete)
+        print("🧹 Cleaning existing data...")
         db.query(Comment).delete()
         db.query(Task).delete()
         db.query(Project).delete()
         db.query(User).delete()
         db.commit()
         
-        # Crear usuarios
-        print("👥 Creando usuarios...")
+        # Create users
+        print("👥 Creating users...")
         users = [
             User(
                 name="Ruben Salazar",
@@ -68,10 +68,10 @@ def create_seed_data():
         for user in users:
             db.refresh(user)
         
-        print(f"✅ Creados {len(users)} usuarios")
+        print(f"✅ Created {len(users)} users")
         
-        # Crear proyectos
-        print("📁 Creando proyectos...")
+        # Create projects
+        print("📁 Creating projects...")
         projects = [
             Project(
                 name="Sistema de Gestión de Tareas",
@@ -94,10 +94,10 @@ def create_seed_data():
         for project in projects:
             db.refresh(project)
         
-        print(f"✅ Creados {len(projects)} proyectos")
+        print(f"✅ Created {len(projects)} projects")
         
-        # Crear tareas para el primer proyecto
-        print("📝 Creando tareas...")
+        # Create tasks for the first project
+        print("📝 Creating tasks...")
         
         now = datetime.now()
         
@@ -225,13 +225,13 @@ def create_seed_data():
         for task in all_tasks:
             db.refresh(task)
         
-        print(f"✅ Creadas {len(all_tasks)} tareas")
+        print(f"✅ Created {len(all_tasks)} tasks")
         
-        # Crear comentarios
-        print("💬 Creando comentarios...")
+        # Create comments
+        print("💬 Creating comments...")
         
         comments = [
-            # Comentarios en tarea 1 (Configurar entorno)
+            # Comments on task 1 (Setup environment)
             Comment(
                 body="Ya está configurado Docker Compose con PostgreSQL, FastAPI y Next.js",
                 task_id=all_tasks[0].id,
@@ -243,7 +243,7 @@ def create_seed_data():
                 author_id=users[1].id
             ),
             
-            # Comentarios en tarea 4 (Endpoints de proyectos)
+            # Comments on task 4 (Project endpoints)
             Comment(
                 body="Los endpoints básicos ya están funcionando, falta agregar los filtros avanzados",
                 task_id=all_tasks[3].id,
@@ -260,21 +260,21 @@ def create_seed_data():
                 author_id=users[0].id
             ),
             
-            # Comentarios en tarea 5 (Endpoints de tareas)
+            # Comments on task 5 (Task endpoints)
             Comment(
                 body="Implementados los filtros por estado y prioridad",
                 task_id=all_tasks[4].id,
                 author_id=users[1].id
             ),
             
-            # Comentarios en tarea 9 (Análisis de competencia)
+            # Comments on task 9 (Competition analysis)
             Comment(
                 body="Revisar sitios de Vercel, Netlify y Railway para inspiración",
                 task_id=all_tasks[8].id,
                 author_id=users[1].id
             ),
             
-            # Comentarios en tarea 10 (Wireframes)
+            # Comments on task 10 (Wireframes)
             Comment(
                 body="Los wireframes están casi listos, enviando para revisión",
                 task_id=all_tasks[9].id,
@@ -291,21 +291,21 @@ def create_seed_data():
             db.add(comment)
         db.commit()
         
-        print(f"✅ Creados {len(comments)} comentarios")
+        print(f"✅ Created {len(comments)} comments")
         
-        print("\n✨ Seed completado exitosamente!")
-        print("\n📊 Resumen:")
-        print(f"   - {len(users)} usuarios")
-        print(f"   - {len(projects)} proyectos")
-        print(f"   - {len(all_tasks)} tareas")
-        print(f"   - {len(comments)} comentarios")
-        print("\n🔐 Credenciales de prueba:")
+        print("\n✨ Seed completed successfully!")
+        print("\n📊 Summary:")
+        print(f"   - {len(users)} users")
+        print(f"   - {len(projects)} projects")
+        print(f"   - {len(all_tasks)} tasks")
+        print(f"   - {len(comments)} comments")
+        print("\n🔐 Test credentials:")
         print("   Email: ruben@example.com | Password: password123")
         print("   Email: maria@example.com | Password: password123")
         print("   Email: carlos@example.com | Password: password123")
         
     except Exception as e:
-        print(f"❌ Error durante el seed: {e}")
+        print(f"❌ Error during seed: {e}")
         db.rollback()
         raise
     finally:

@@ -13,12 +13,12 @@ from app.core.config import settings
 
 router = APIRouter()
 
-# Schema para login
+# Schema for login
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-# POST /users/login - Ruta de autenticación
+# POST /users/login - Authentication route
 @router.post("/login", status_code=status.HTTP_200_OK)
 def login(
     credentials: LoginRequest,
@@ -27,32 +27,32 @@ def login(
     user = db.query(User).filter(User.email == credentials.email).first()
     
     if not user:
-        print(f"❌ Usuario no encontrado: {credentials.email}")
+        print(f"❌ User not found: {credentials.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas"
+            detail="Invalid credentials"
         )
     
-    print(f"✅ Usuario encontrado: {user.email}")
-    print(f"🔑 Password ingresada: {credentials.password}")
-    print(f"🔑 Password en BD: {user.password_hash}")
+    print(f"✅ User found: {user.email}")
+    print(f"🔑 Password entered: {credentials.password}")
+    print(f"🔑 Password in DB: {user.password_hash}")
     
-    # Verificar si el usuario está activo
+    # Verify if user is active
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Usuario inactivo"
+            detail="Inactive user"
         )
     
-    # Verificar contraseña (usar password_hash en vez de hashed_password)
+    # Verify password (use password_hash instead of hashed_password)
     if not verify_password(credentials.password, user.password_hash):
-        print("❌ Contraseñas NO coinciden")
+        print("❌ Passwords do NOT match")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas"
+            detail="Invalid credentials"
         )
     
-    print("✅ Login exitoso")
+    print("✅ Login successful")
     
     # Token expira en 60 minutos
     access_token = create_access_token(

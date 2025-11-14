@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import CreateUniversalModal from "../universalComponents/createUniversalComponents/createUniversalModal";
 import * as taskService from "./taskService/taskService";
 import * as userService from "../userComponents/userService/userService";
+import { toast } from "react-toastify";
 
 type Props = {
   projectId: number;
@@ -93,6 +94,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
           setUsers(res.items ?? []);
         } catch (err) {
           console.error("Error loading users:", err);
+          toast.error("Could not load users");
         } finally {
           setLoadingUsers(false);
         }
@@ -103,7 +105,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
   // now receives the values object (CreateTaskInput) instead of a FormEvent
   const handleSubmit = async (values: taskService.CreateTaskInput) => {
     if (!values.title?.trim()) {
-      alert("El título es obligatorio");
+      toast.error("Title is required");
       return;
     }
 
@@ -125,6 +127,8 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
       console.log("Sending task data:", taskData);
       await taskService.createTask(projectId, taskData);
       
+      toast.success("Task created successfully");
+      
       // Limpiar formulario
       setFormData({
         title: "",
@@ -142,7 +146,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
       handleClose();
     } catch (err) {
       console.error("Error creating task:", err);
-      alert("Error al crear la tarea");
+      toast.error("Error creating task");
     } finally {
       setLoading(false);
     }
@@ -152,8 +156,8 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
     <Modal
       open={modalOpen}
       onClose={handleClose}
-      title="Crear Nueva Tarea"
-      submitLabel={loading ? "Creando…" : "Crear"}
+      title="Create New Task"
+      submitLabel={loading ? "Creating…" : "Create"}
       initialValues={formData}
         onSubmit={async (values: taskService.CreateTaskInput) => {
           await handleSubmit(values);
@@ -172,14 +176,14 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                 marginBottom: "0.5rem",
               }}
             >
-              Título <span style={{ color: "#ef4444" }}>*</span>
+              Title <span style={{ color: "#ef4444" }}>*</span>
             </label>
             <input
               id="title"
               type="text"
               value={values.title}
               onChange={(e) => setValues(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Título de la tarea"
+              placeholder="Task title"
               required
               style={{
                 width: "100%",
@@ -213,13 +217,13 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                 marginBottom: "0.5rem",
               }}
             >
-              Descripción
+              Description
             </label>
             <textarea
               id="description"
               value={values.description}
               onChange={(e) => setValues(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Descripción detallada de la tarea"
+              placeholder="Detailed task description"
               rows={4}
               style={{
                 width: "100%",
@@ -256,7 +260,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                   marginBottom: "0.5rem",
                 }}
               >
-                Estado
+                Status
               </label>
               <select
                 id="status"
@@ -281,9 +285,9 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                   e.currentTarget.style.boxShadow = "none";
                 }}
               >
-                <option value="todo">Por hacer</option>
-                <option value="doing">En progreso</option>
-                <option value="done">Completado</option>
+                <option value="todo">To Do</option>
+                <option value="doing">In Progress</option>
+                <option value="done">Completed</option>
               </select>
             </div>
 
@@ -298,7 +302,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                   marginBottom: "0.5rem",
                 }}
               >
-                Prioridad
+                Priority
               </label>
               <select
                 id="priority"
@@ -323,9 +327,9 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                   e.currentTarget.style.boxShadow = "none";
                 }}
               >
-                <option value="low">Baja</option>
-                <option value="medium">Media</option>
-                <option value="high">Alta</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
               </select>
             </div>
           </div>
@@ -342,7 +346,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                 marginBottom: "0.5rem",
               }}
             >
-              Asignar usuarios
+              Assign users
             </label>
             <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
               <select
@@ -370,9 +374,9 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                   e.currentTarget.style.boxShadow = "none";
                 }}
               >
-                <option value="">Seleccionar usuario...</option>
+                <option value="">Select user...</option>
                 {loadingUsers ? (
-                  <option value="">Cargando usuarios...</option>
+                  <option value="">Loading users...</option>
                 ) : (
                   users
                     .filter(u => !assignedUsers.find(au => au.id === u.id))
@@ -400,7 +404,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                   whiteSpace: "nowrap",
                 }}
               >
-                + Agregar
+                + Add
               </button>
             </div>
             
@@ -442,7 +446,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                         lineHeight: 1,
                         padding: "0 0.25rem",
                       }}
-                      aria-label={`Quitar ${user.name || user.email}`}
+                      aria-label={`Remove ${user.name || user.email}`}
                     >
                       ×
                     </button>
@@ -460,7 +464,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                 borderRadius: "8px",
                 border: "1px dashed #e5e7eb",
               }}>
-                No hay usuarios asignados
+                No assigned users
               </div>
             )}
           </div>
@@ -477,7 +481,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                 marginBottom: "0.5rem",
               }}
             >
-              Fecha límite
+              Due date
             </label>
             <input
               id="due_date"

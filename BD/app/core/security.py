@@ -15,22 +15,22 @@ from app.models.user import User
 
 log = logging.getLogger(__name__)
 
-# 🔑 OAuth2 para FastAPI
+# 🔑 OAuth2 for FastAPI
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # ------------------------
-# FUNCIONES DE CONTRASEÑA (SIN HASH - SOLO DESARROLLO)
+# PASSWORD FUNCTIONS (NO HASH - DEVELOPMENT ONLY)
 # ------------------------
 def verify_password(plain_password: str, stored_password: str) -> bool:
-    """Comparación directa sin hash (solo desarrollo)"""
+    """Direct comparison without hash (development only)"""
     return plain_password == stored_password
 
 def get_password_hash(password: str) -> str:
-    """Retorna la contraseña sin cambios (solo desarrollo)"""
+    """Returns password unchanged (development only)"""
     return password
 
 # ------------------------
-# FUNCIONES DE JWT
+# JWT FUNCTIONS
 # ------------------------
 def create_access_token(data: Dict, expires_delta: timedelta = None) -> str:
     to_encode = data.copy()
@@ -44,10 +44,10 @@ def decode_token(token: str) -> Dict:
         return payload
     except jwt.ExpiredSignatureError:
         log.warning("Token expired: %s...", (token or '')[:20])
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expirado")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
     except jwt.InvalidTokenError:
         log.warning("Invalid token received (first 60 chars): %s", (token or '')[:60])
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 # ------------------------
 # FUNCIONES DE USUARIO ACTIVO
@@ -66,7 +66,7 @@ def get_current_active_user(
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido"
+            detail="Invalid token"
         )
 
     user = db.query(User).filter(User.id == user_id).first()

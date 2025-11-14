@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const api = axios.create({
   // Use 127.0.0.1 to avoid potential localhost IPv6 mismatch
@@ -61,6 +62,16 @@ api.interceptors.response.use((response) => {
       request: error?.request ? '[request exists]' : null,
       response: error?.response ? { status: error.response.status, data: error.response.data } : null,
     });
+
+    // Show toast for critical errors (only if not handled by components)
+    // Note: 401 errors are handled by individual components, not globally
+    if (error?.response?.status === 500) {
+      toast.error("Server error. Please try again later.");
+    } else if (error?.response?.status === 503) {
+      toast.error("Service unavailable. Please try again later.");
+    } else if (error?.code === "ECONNABORTED" || error?.code === "ERR_NETWORK") {
+      toast.error("Network error. Please check your connection.");
+    }
   } catch (err) {
     console.error('[axios] response error logging failed', err);
   }

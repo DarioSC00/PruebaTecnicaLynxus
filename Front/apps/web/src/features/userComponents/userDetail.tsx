@@ -7,7 +7,6 @@ import styles from "./userPage.module.css";
 
 type UserDetailType = userService.UserDetail;
 type ProjectItem = { id: number; name: string; description?: string };
-type TaskItem = { id: number; title: string; status: 'todo' | 'doing' | 'done'; priority: 'low' | 'medium' | 'high' };
 
 // Helper seguro para obtener clases desde CSS modules
 function getStyle(stylesObj: Record<string,string>, key: string) {
@@ -49,8 +48,8 @@ export default function UserDetail({
         });
       } catch (e) {
         if (!mounted) return;
-        console.error("Error cargando usuario:", e);
-        setError("No se pudo cargar el usuario");
+        console.error("Error loading user:", e);
+        setError("Could not load user");
       } finally {
         if (mounted) React.startTransition(() => setLoading(false));
       }
@@ -63,52 +62,52 @@ export default function UserDetail({
     <DetalModal 
       open={open} 
       onClose={onClose} 
-      title="Información del usuario"
+      title="User Information"
       data={data}
       render={(user) => {
-        if (loading) return <p className={styles.loadingText}>Cargando información...</p>;
+        if (loading) return <p className={styles.loadingText}>Loading information...</p>;
         if (error) return <p className={styles.errorText}>{error}</p>;
-        if (!user) return <p className={styles.emptyText}>No hay datos disponibles</p>;
+        if (!user) return <p className={styles.emptyText}>No data available</p>;
 
         return (
           <div className={styles.detailContent}>
-            {/* Información básica del usuario */}
+            {/* User basic information */}
             <div className={styles.detailSection}>
-              <h3 className={styles.sectionTitle}>Datos del usuario</h3>
+              <h3 className={styles.sectionTitle}>User Data</h3>
               
               <div className={styles.detailGrid}>
                 <div className={styles.detailField}>
-                  <label className={styles.fieldLabel}>Nombre completo</label>
-                  <p className={styles.fieldValue}>{user.name ?? "Sin nombre"}</p>
+                  <label className={styles.fieldLabel}>Full name</label>
+                  <p className={styles.fieldValue}>{user.name ?? "No name"}</p>
                 </div>
 
                 <div className={styles.detailField}>
-                  <label className={styles.fieldLabel}>Correo electrónico</label>
+                  <label className={styles.fieldLabel}>Email address</label>
                   <p className={styles.fieldValue}>{user.email ?? "-"}</p>
                 </div>
 
                 <div className={styles.detailField}>
-                  <label className={styles.fieldLabel}>Fecha de registro</label>
+                  <label className={styles.fieldLabel}>Registration date</label>
                   <p className={styles.fieldValue}>
                     {user.created_at 
-                      ? new Date(user.created_at).toLocaleDateString('es-ES', {
+                      ? new Date(user.created_at).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit'
                         })
-                      : "No disponible"
+                      : "Not available"
                     }
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Proyectos del usuario (si el backend los devuelve) */}
+            {/* User projects (if backend returns them) */}
             {user.projects && user.projects.length > 0 && (
               <div className={styles.detailSection}>
-                <h3 className={styles.sectionTitle}>Proyectos ({user.projects.length})</h3>
+                <h3 className={styles.sectionTitle}>Projects ({user.projects.length})</h3>
                 <ul className={styles.projectList}>
                   {user.projects.map((project: ProjectItem) => (
                     <li key={project.id} className={styles.projectItem}>
@@ -122,10 +121,10 @@ export default function UserDetail({
               </div>
             )}
 
-            {/* Tareas asignadas (si el backend las devuelve) */}
+            {/* Assigned tasks (if backend returns them) */}
             {user.tasks && user.tasks.length > 0 && (
               <div className={styles.detailSection}>
-                <h3 className={styles.sectionTitle}>Tareas asignadas ({user.tasks.length})</h3>
+                <h3 className={styles.sectionTitle}>Assigned Tasks ({user.tasks.length})</h3>
                 <ul className={styles.taskList}>
                   {user.tasks.map((task) => {
                     const statusKey = `status-${task.status}`;
@@ -135,14 +134,14 @@ export default function UserDetail({
                         <div className={styles.taskTitle}>{task.title}</div>
                         <div className={styles.taskMeta}>
                           <span className={`${styles.taskStatus} ${getStyle(styles, statusKey)}`}>
-                            {task.status === 'todo' && 'Por hacer'}
-                            {task.status === 'doing' && 'En progreso'}
-                            {task.status === 'done' && 'Completada'}
+                            {task.status === 'todo' && 'To Do'}
+                            {task.status === 'doing' && 'In Progress'}
+                            {task.status === 'done' && 'Completed'}
                           </span>
                           <span className={`${styles.taskPriority} ${getStyle(styles, priorityKey)}`}>
-                            {task.priority === 'low' && 'Baja'}
-                            {task.priority === 'medium' && 'Media'}
-                            {task.priority === 'high' && 'Alta'}
+                            {task.priority === 'low' && 'Low'}
+                            {task.priority === 'med' && 'Medium'}
+                            {task.priority === 'high' && 'High'}
                           </span>
                         </div>
                       </li>
@@ -152,11 +151,11 @@ export default function UserDetail({
               </div>
             )}
 
-            {/* Mensaje si no tiene proyectos ni tareas */}
+            {/* Message if user has no projects or tasks */}
             {(!user.projects || user.projects.length === 0) && 
              (!user.tasks || user.tasks.length === 0) && (
               <div className={styles.emptySection}>
-                <p>Este usuario aún no tiene proyectos ni tareas asignadas.</p>
+                <p>This user does not have any projects or assigned tasks yet.</p>
               </div>
             )}
           </div>

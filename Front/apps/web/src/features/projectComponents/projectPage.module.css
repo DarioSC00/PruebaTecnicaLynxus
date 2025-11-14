@@ -122,7 +122,7 @@
 
 .tableHeader {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2.5fr 1fr 1.5fr 1fr;
   gap: 1rem;
   padding: 1rem 1.5rem;
   background: #f9fafb;
@@ -148,7 +148,7 @@
 
 .rowContent {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2.5fr 1fr 1.5fr 1fr;
   gap: 1rem;
   padding: 1rem 1.5rem;
   align-items: center;
@@ -450,3 +450,705 @@
   color: #111827;
   margin: 0;
 }
+
+/* ===============================================
+   DETAIL PROJECT MODAL STYLES
+   =============================================== */
+
+/* Loading States */
+.loadingContainer {
+  text-align: center;
+  padding: 3rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f4f6;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loadingText {
+  margin-top: 1rem;
+  color: #6b7280;
+}
+
+/* Error State */
+.errorContainer {
+  padding: 1rem;
+  background-color: #fee2e2;
+  border-left: 4px solid #ef4444;
+  border-radius: 8px;
+  color: #991b1b;
+}
+
+.noData {
+  text-align: center;
+  color: #9ca3af;
+  padding: 2rem;
+}
+
+/* Main Grid Layout */
+.detailGrid {
+  display: grid;
+  grid-template-columns: 40% 60%;
+  gap: 2rem;
+  min-height: 500px;
+  overflow: hidden;
+}
+
+/* Left Column */
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Description Section */
+.descriptionSection {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.descriptionTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.descriptionText {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  opacity: 0.95;
+}
+
+/* Info Grid */
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.infoCard {
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.infoCardOwner {
+  background-color: #f0f9ff;
+  border: 1px solid #bfdbfe;
+}
+
+.infoCardStatus {
+  border: 1px solid;
+}
+
+.infoCardStatusActive {
+  background-color: #dcfce7;
+  border-color: #86efac;
+}
+
+.infoCardStatusArchived {
+  background-color: #fef3c7;
+  border-color: #fbbf24;
+}
+
+.infoCardHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.infoCardIcon {
+  font-size: 1.25rem;
+  margin-right: 0.5rem;
+}
+
+.infoCardLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.infoCardLabelOwner {
+  color: #1e40af;
+}
+
+.infoCardLabelActive {
+  color: #166534;
+}
+
+.infoCardLabelArchived {
+  color: #92400e;
+}
+
+.infoCardValue {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.infoCardValueOwner {
+  color: #1e3a8a;
+}
+
+.infoCardValueActive {
+  color: #14532d;
+}
+
+.infoCardValueArchived {
+  color: #78350f;
+}
+
+/* Members Section */
+.membersSection {
+  background-color: #f9fafb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid #e5e7eb;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.membersHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.membersTitle {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.membersBadge {
+  background-color: #e5e7eb;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+}
+
+.addMemberBtn {
+  padding: 0.5rem 1rem;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.addMemberBtn:hover {
+  background-color: #059669;
+}
+
+.membersList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.memberCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.memberCard:hover {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-color: #3b82f6;
+}
+
+.memberAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.memberInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.memberName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memberEmail {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.removeMemberBtn {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ef4444;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.removeMemberBtn:hover {
+  background-color: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.noMembersContainer {
+  text-align: center;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 8px;
+  border: 2px dashed #e5e7eb;
+}
+
+.noMembersIcon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.noMembersText {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Right Column - Comments */
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  padding-right: 1rem;
+}
+
+.commentsSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: 75%;
+}
+
+.commentsTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.commentsBadge {
+  background-color: #e5e7eb;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+}
+
+.commentInputContainer {
+  margin-bottom: 1rem;
+}
+
+.commentTextarea {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  resize: vertical;
+  font-family: inherit;
+  transition: all 0.2s;
+  outline: none;
+  background-color: #f9fafb;
+  box-sizing: border-box;
+}
+
+.commentTextarea:focus {
+  border-color: #3b82f6;
+  background-color: white;
+}
+
+.commentBtnContainer {
+  margin-top: 0.75rem;
+  text-align: right;
+}
+
+.commentBtn {
+  padding: 0.625rem 1.25rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.commentBtn:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.4);
+}
+
+.commentBtn:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.commentsLoadingContainer {
+  text-align: center;
+  color: #9ca3af;
+  padding: 2rem;
+  background-color: #f9fafb;
+  border-radius: 10px;
+  border: 2px dashed #e5e7eb;
+}
+
+.commentsSpinner {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f3f4f6;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 0.5rem;
+}
+
+.noCommentsContainer {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  background-color: #f9fafb;
+  border-radius: 10px;
+  border: 2px dashed #e5e7eb;
+}
+
+.noCommentsIcon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.noCommentsText {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.noCommentsSubtext {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  margin: 0.25rem 0 0 0;
+}
+
+.commentsList {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.commentCard {
+  padding: 1rem;
+  background-color: white;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+}
+
+.commentCard:hover {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 0.75rem;
+}
+
+.commentAuthorInfo {
+  flex: 1;
+}
+
+.commentAuthorHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.commentAuthorAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.commentAuthorName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.commentDate {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.deleteCommentBtn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #ef4444;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteCommentBtn:hover {
+  background-color: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.commentBody {
+  font-size: 0.875rem;
+  color: #374151;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  padding-left: 2.5rem;
+}
+
+/* Add Member Modal */
+.addMemberModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.addMemberModalContent {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 600px;
+  overflow: auto;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.addMemberModalTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.addMemberModalLoading {
+  text-align: center;
+  padding: 2rem;
+  color: #9ca3af;
+}
+
+.addMemberModalEmpty {
+  text-align: center;
+  padding: 2rem;
+}
+
+.addMemberModalEmptyText {
+  color: #6b7280;
+  margin: 0;
+}
+
+.addMemberModalForm {
+  margin-bottom: 1rem;
+}
+
+.addMemberModalLabel {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.addMemberModalSelect {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background-color: #f9fafb;
+}
+
+.addMemberModalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.addMemberModalCancelBtn {
+  padding: 0.625rem 1.25rem;
+  background-color: #e5e7eb;
+  color: #374151;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addMemberModalCancelBtn:hover {
+  background-color: #d1d5db;
+}
+
+.addMemberModalAddBtn {
+  padding: 0.625rem 1.25rem;
+  background-color: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addMemberModalAddBtn:hover {
+  background-color: #059669;
+}
+
+.addMemberModalAddBtnDisabled {
+  background-color: #d1d5db !important;
+  cursor: not-allowed !important;
+}
+
+/* Action icons in project list */
+.actionsRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center; /* center icons within the actions cell */
+}
+
+.actionsCell {
+  /* ensure actions column centers its content and doesn't wrap */
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s ease-in-out, background-color 0.12s ease-in-out, border-color 0.12s ease-in-out;
+  color: #374151; /* neutral */
+  padding: 4px;
+}
+
+.iconBtn svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.iconBtn:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  transform: translateY(-3px);
+  color: #1e40af;
+}
+
+.iconBtn:active {
+  transform: translateY(0);
+}
+

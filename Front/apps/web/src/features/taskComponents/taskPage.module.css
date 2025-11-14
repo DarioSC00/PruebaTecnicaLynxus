@@ -261,3 +261,242 @@
   color: #111827;
   margin: 0;
 }
+
+/* ===============================================
+   TASK DETAIL MODAL STYLES
+   =============================================== */
+
+/* Loading and Empty States */
+.taskDetailLoading {
+  text-align: center;
+  color: #9ca3af;
+}
+
+.taskDetailNoData {
+  text-align: center;
+  color: #9ca3af;
+}
+
+/* Task Info Grid */
+.taskInfoContainer {
+  margin-bottom: 1.5rem;
+}
+
+.taskInfoGrid {
+  display: grid;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.taskInfoRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.taskInfoLabel {
+  min-width: 120px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+/* Status Badge */
+.taskStatusBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.taskStatusTodo {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.taskStatusDoing {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.taskStatusDone {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+/* Priority Badge */
+.taskPriorityBadge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.taskPriorityLow {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.taskPriorityMedium {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.taskPriorityHigh {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* Task Description Section */
+.taskDescriptionSection {
+  margin-bottom: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.taskDescriptionTitle {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.taskDescriptionText {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #374151;
+  white-space: pre-wrap;
+}
+
+/* Task Comments Section */
+.taskCommentsSection {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.taskCommentsTitle {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Task Comment Input */
+.taskCommentInputContainer {
+  margin-bottom: 1rem;
+}
+
+.taskCommentTextarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.taskCommentBtnContainer {
+  margin-top: 0.5rem;
+  text-align: right;
+}
+
+.taskCommentBtn {
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.taskCommentBtn:hover {
+  background-color: #2563eb;
+}
+
+.taskCommentBtnDisabled {
+  background-color: #d1d5db !important;
+  cursor: not-allowed !important;
+}
+
+/* Task Comments Loading and Empty States */
+.taskCommentsLoading {
+  text-align: center;
+  color: #9ca3af;
+  padding: 1rem;
+}
+
+.taskCommentsEmpty {
+  text-align: center;
+  color: #9ca3af;
+  padding: 1rem;
+  font-size: 0.875rem;
+}
+
+/* Task Comment List */
+.taskCommentList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.taskCommentItem {
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.taskCommentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 0.5rem;
+}
+
+.taskCommentAuthor {
+  font-size: 0.875rem;
+  color: #111827;
+  font-weight: 700;
+}
+
+.taskCommentDate {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-left: 0.5rem;
+}
+
+.taskCommentDeleteBtn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: #ef4444;
+  background-color: transparent;
+  border: 1px solid #ef4444;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.taskCommentDeleteBtn:hover {
+  background-color: #ef4444;
+  color: white;
+}
+
+.taskCommentBody {
+  font-size: 0.875rem;
+  color: #374151;
+  white-space: pre-wrap;
+}
+
+/* Task Due Date */
+.taskDueDateNormal {
+  color: #0f172a;
+}
+
+.taskDueDateOverdue {
+  color: #991b1b;
+}

@@ -8,17 +8,17 @@ class Settings(BaseSettings):
  
     API_PORT: int = 8000
     JWT_SECRET: str
-    JWT_EXPIRES_IN: int = 3600  # segundos
+    JWT_EXPIRES_IN: int = 3600  # seconds
     DEBUG: bool = False
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-# Instancia global
+# Instance
 settings = Settings()
 
-# 🧩 Verificación opcional
+# 🧩 Optional verification
 if __name__ == "__main__":
     print("DATABASE_URL:", settings.DATABASE_URL)
     print("DEBUG:", settings.DEBUG)

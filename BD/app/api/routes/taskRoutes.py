@@ -15,11 +15,11 @@ from app.schemas.taskSchema import TaskCreate, TaskRead, TaskUpdate
 # Authentication
 from app.core.security import get_current_active_user
 from app.models.user import User
-from app.models.task import TaskStatus, TaskPriority  # Para filtros
+from app.models.task import TaskStatus, TaskPriority  # For filters
 
 router = APIRouter()
 
-# === RUTAS DE TAREAS POR PROYECTO ===
+# === PROJECT TASKS ROUTES ===
 
 @router.post("/projects/{project_id}/tasks", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
 def create_task(
@@ -30,7 +30,7 @@ def create_task(
 ):
     """Create a new task in a project"""
     try:
-        # Verificar que el proyecto existe (sin verificar ownership - colaborativo)
+        # Verify that the project exists (no ownership check - collaborative)
         from app.models.project import Project
         project = db.query(Project).filter(Project.id == project_id).first()
         if not project:
@@ -69,7 +69,7 @@ def get_project_tasks(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get tasks from a project with filters"""
-    # Verificar que el proyecto existe (sin verificar ownership - colaborativo)
+    # Verify that the project exists (no ownership check - collaborative)
     from app.crud.projectController import project_crud
     project = db.query(project_crud.model).filter(project_crud.model.id == project_id).first()
     if not project:
@@ -102,7 +102,7 @@ def get_task(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
-    # En un tablero colaborativo, cualquier usuario autenticado puede ver tareas
+    # In a collaborative board, any authenticated user can view tasks
     return task
 
 @router.put("/tasks/{task_id}", response_model=TaskRead)

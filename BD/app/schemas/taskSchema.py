@@ -4,11 +4,11 @@ from datetime import datetime
 from .userSchema import UserOut
 from .commentSchema import CommentOut
 
-# Tipos literales para estado y prioridad
+# Literal types for status and priority
 StatusType = Literal["todo", "doing", "done"]
 PriorityType = Literal["low", "medium", "high"]
 
-# Modelo para crear una tarea
+# Model to create a task
 class TaskCreate(BaseModel):
     title: str = Field(..., min_length=1)
     description: Optional[str] = None
@@ -17,7 +17,7 @@ class TaskCreate(BaseModel):
     due_date: Optional[datetime] = None
     assignee_id: Optional[int] = None
 
-# Modelo para actualizar una tarea
+# Model to update a task
 class TaskUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1)
     description: Optional[str] = None
@@ -26,7 +26,7 @@ class TaskUpdate(BaseModel):
     due_date: Optional[datetime] = None
     assignee_id: Optional[int] = None
 
-# Modelo para leer una tarea (retornar al cliente)
+# Model to read a task (return to client)
 class TaskRead(BaseModel):
     id: int
     project_id: int
@@ -40,10 +40,10 @@ class TaskRead(BaseModel):
     updated_at: datetime
 
     class Config:
-        # Pydantic v2: permite instanciar desde ORM u objetos con atributos
+        # Pydantic v2: allows instantiation from ORM or objects with attributes
         from_attributes = True
 
-# Modelo para paginación de tareas
+# Model for task pagination
 class TasksPage(BaseModel):
     items: List[TaskRead]
     total: int

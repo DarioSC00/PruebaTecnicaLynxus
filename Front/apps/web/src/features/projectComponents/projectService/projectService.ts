@@ -20,6 +20,7 @@ export type ProjectDetail = {
   archived?: boolean;
   owner?: UserItem | null;
   owner_id?: number;
+  members?: UserItem[];  // Miembros del proyecto
   tasks?: TaskItem[];
 };
 export type ProjectItem = { 
@@ -95,4 +96,44 @@ export async function createProject(payload: CreateProjectInput) {
   // usa la instancia api ya importada en este archivo
   const res = await api.post("/projects", payload);
   return res.data;
+}
+
+// Comentarios de proyecto
+export async function getProjectComments(projectId: number): Promise<CommentItem[]> {
+  try {
+    const res = await api.get(`/projects/${projectId}/comments`);
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err) {
+    console.error("[projectService] getProjectComments error:", err);
+    return [];
+  }
+}
+
+export async function createProjectComment(projectId: number, data: { body: string }) {
+  const res = await api.post(`/projects/${projectId}/comments`, data);
+  return res.data;
+}
+
+export async function deleteProjectComment(commentId: number) {
+  await api.delete(`/projects/comments/${commentId}`);
+}
+
+// Miembros de proyecto
+export async function getProjectMembers(projectId: number): Promise<UserItem[]> {
+  try {
+    const res = await api.get(`/projects/${projectId}/members`);
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err) {
+    console.error("[projectService] getProjectMembers error:", err);
+    return [];
+  }
+}
+
+export async function addProjectMember(projectId: number, userId: number) {
+  const res = await api.post(`/projects/${projectId}/members`, { user_id: userId });
+  return res.data;
+}
+
+export async function removeProjectMember(projectId: number, userId: number) {
+  await api.delete(`/projects/${projectId}/members/${userId}`);
 }

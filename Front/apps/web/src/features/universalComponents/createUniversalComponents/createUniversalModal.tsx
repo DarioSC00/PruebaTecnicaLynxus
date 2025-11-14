@@ -14,8 +14,8 @@ type Props<T extends GenericRecord = GenericRecord> = {
   initialValues?: Partial<T>;
   onSubmit: (values: T) => Promise<unknown> | unknown;
   /**
-   * renderForm recibe (values, setValues, submitting)
-   * y debe devolver los controles del formulario (inputs, selects, etc).
+   * renderForm receives (values, setValues, submitting)
+   * and must return the form controls (inputs, selects, etc).
    */
   renderForm: (args: {
     values: T;
@@ -29,7 +29,7 @@ export default function CreateUniversalModal<T extends GenericRecord = GenericRe
   open,
   onClose,
   title,
-  submitLabel = "Crear",
+  submitLabel = "Create",
   initialValues,
   onSubmit,
   renderForm,
@@ -57,7 +57,7 @@ export default function CreateUniversalModal<T extends GenericRecord = GenericRe
       setSubmitting(false);
       onClose();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err ?? "Error al crear.");
+      const message = err instanceof Error ? err.message : String(err ?? "Creation error.");
       setError(message);
       setSubmitting(false);
     }
@@ -77,10 +77,10 @@ export default function CreateUniversalModal<T extends GenericRecord = GenericRe
 
         <div className={styles.actions}>
           <button type="button" className={styles.btnGhost} onClick={onClose} disabled={submitting}>
-            Cancelar
+            Cancel
           </button>
           <button type="submit" className={styles.btn} disabled={submitting}>
-            {submitting ? "Creando…" : submitLabel}
+            {submitting ? "Creating…" : submitLabel}
           </button>
         </div>
       </form>

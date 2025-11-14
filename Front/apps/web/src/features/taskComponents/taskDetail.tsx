@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import styles from "./taskPage.module.css";
+import DetalModal from "../universalComponents/detailUniversalComponents/detailModal";
 import * as taskService from "./taskService/taskService";
 import * as commentService from "../commentComponents/commentService/commentService";
 import type { TaskDetail, CommentItem } from "./taskService/taskService";
+import styles from "./taskPage.module.css";
+import { toast } from "react-toastify";
 
 // Aceptar onUpdate opcional para que el consumidor pueda pasarlo
 type Props = {
@@ -13,8 +15,8 @@ type Props = {
   onClose: () => void;
   onUpdate?: () => void;
 };
-// tipar explícitamente como React.FC ayuda en algunas verificaciones de JSX
-const TaskDetail: React.FC<Props> = ({ taskId, open, onClose, onUpdate }) => {
+
+const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate }) => {
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -33,6 +35,7 @@ const TaskDetail: React.FC<Props> = ({ taskId, open, onClose, onUpdate }) => {
         setTask(t ?? null);
       } catch (err) {
         console.error("Error loading task:", err);
+        toast.error("Could not load task");
         setTask(null);
       } finally {
         setLoading(false);
@@ -48,9 +51,17 @@ const TaskDetail: React.FC<Props> = ({ taskId, open, onClose, onUpdate }) => {
       const res = await commentService.listComments(taskId);
       // esperar array
       setComments(Array.isArray(res) ? res : (res?.items ?? []));
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error loading comments:", err);
-      setComments([]);
+      // Si es 404, 403, o 401, simplemente mostrar vacío sin error
+      // 401 significa token expirado - usuario puede seguir usando la app, solo sin comentarios
+      if (err?.response?.status === 404 || err?.response?.status === 403 || err?.response?.status === 401) {
+        setComments([]);
+      } else {
+        // Solo mostrar error para otros casos (500, network, etc.)
+        toast.error("Could not load comments");
+        setComments([]);
+      }
     } finally {
       setCommentsLoading(false);
     }
@@ -61,109 +72,163 @@ const TaskDetail: React.FC<Props> = ({ taskId, open, onClose, onUpdate }) => {
     setCreating(true);
     try {
       await commentService.createComment(taskId, { body: newComment });
+      toast.success("Comment created successfully");
       setNewComment("");
       await loadComments();
       onUpdate?.(); // notificar cambio al componente padre
     } catch (err) {
       console.error("Error creating comment:", err);
-      alert("No se pudo crear el comentario");
+      toast.error("Could not create comment");
     } finally {
       setCreating(false);
     }
   };
 
   const handleDeleteComment = async (commentId: number) => {
-    if (!confirm("Eliminar comentario?")) return;
+    if (!confirm("Delete comment?")) return;
     try {
       await commentService.deleteComment(commentId);
+      toast.success("Comment deleted successfully");
       setComments((c) => c.filter((x) => x.id !== commentId));
-      onUpdate?.(); // notificar cambio al componente padre
+      onUpdate?.(); // notify parent component of change
     } catch (err) {
       console.error("Error deleting comment:", err);
-      alert("No se pudo eliminar el comentario");
+      toast.error("Could not delete comment");
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div className={styles.modalOverlay} role="dialog" aria-modal="true" aria-labelledby="task-detail-title">
-      <div className={styles.modal}>
-        <header className={styles.modalHeader}>
-          <h3 id="task-detail-title">{loading ? "Cargando…" : task?.title ?? "Tarea"}</h3>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Cerrar">×</button>
-        </header>
+    <DetalModal open={open} onClose={onClose} title={task?.title ?? "Task Detail"} data={task}>
+      {loading ? (
+        <p className={styles.taskDetailLoading}>Loading…</p>
+      ) : !task ? (
+        <p className={styles.taskDetailNoData}>Task not found</p>
+      ) : (
+        <div>
+          {/* Task information */}
+          <div className={styles.taskInfoContainer}>
+            <div className={styles.taskInfoGrid}>
+              <div className={styles.taskInfoRow}>
+                <strong className={styles.taskInfoLabel}>Project ID:</strong>
+                <span>#{task.project_id}</span>
+              </div>
+              <div className={styles.taskInfoRow}>
+                <strong className={styles.taskInfoLabel}>Assigned to:</strong>
+                <span>{task.assignee?.name ?? task.assignee?.email ?? "-"}</span>
+              </div>
+              <div className={styles.taskInfoRow}>
+                <strong className={styles.taskInfoLabel}>Status:</strong>
+                <span className={`${styles.taskStatusBadge} ${
+                  task.status === "done" ? styles.taskStatusDone : 
+                  task.status === "doing" ? styles.taskStatusDoing : 
+                  styles.taskStatusTodo
+                }`}>
+                  {task.status === "todo" ? "To Do" : task.status === "doing" ? "In Progress" : "Completed"}
+                </span>
+              </div>
+              <div className={styles.taskInfoRow}>
+                <strong className={styles.taskInfoLabel}>Priority:</strong>
+                <span className={`${styles.taskPriorityBadge} ${
+                  task.priority === "high" ? styles.taskPriorityHigh : 
+                  task.priority === "medium" ? styles.taskPriorityMedium : 
+                  styles.taskPriorityLow
+                }`}>
+                  {task.priority === "low" ? "Low" : task.priority === "medium" ? "Medium" : "High"}
+                </span>
+              </div>
+              <div className={styles.taskInfoRow}>
+                <strong className={styles.taskInfoLabel}>Due Date:</strong>
+                <span>{task.due_date ? new Date(task.due_date).toLocaleString("en-US") : "-"}</span>
+              </div>
+              <div className={styles.taskInfoRow}>
+                <strong className={styles.taskInfoLabel}>Created:</strong>
+                <span>{task.created_at ? new Date(task.created_at).toLocaleString("en-US") : "-"}</span>
+              </div>
+              <div className={styles.taskInfoRow}>
+                <strong className={styles.taskInfoLabel}>Updated:</strong>
+                <span>{task.updated_at ? new Date(task.updated_at).toLocaleString("en-US") : "-"}</span>
+              </div>
+            </div>
+          </div>
 
-        <main className={styles.modalBody}>
-          {loading ? (
-            <div>Cargando detalles…</div>
-          ) : task ? (
-            <>
-              <section className={styles.section}>
-                <h4>Información</h4>
-                <div className={styles.row}><strong>ID:</strong> #{task.id}</div>
-                <div className={styles.row}><strong>Proyecto ID:</strong> #{task.project_id}</div>
-                <div className={styles.row}><strong>Asignado a:</strong> {task.assignee?.name ?? task.assignee?.email ?? "-"}</div>
-                <div className={styles.row}><strong>Estado:</strong> {task.status}</div>
-                <div className={styles.row}><strong>Prioridad:</strong> {task.priority}</div>
-                <div className={styles.row}><strong>Vencimiento:</strong> {task.due_date ? new Date(task.due_date).toLocaleString("es-ES") : "-"}</div>
-                <div className={styles.row}><strong>Creado:</strong> {task.created_at ? new Date(task.created_at).toLocaleString("es-ES") : "-"}</div>
-                <div className={styles.row}><strong>Última actualización:</strong> {task.updated_at ? new Date(task.updated_at).toLocaleString("es-ES") : "-"}</div>
-              </section>
-
-              <section className={styles.section}>
-                <h4>Descripción</h4>
-                <p className={styles.description}>{task.description ?? "-"}</p>
-              </section>
-
-              <section className={styles.section}>
-                <h4>Comentarios</h4>
-
-                <div className={styles.commentForm}>
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Escribe un comentario..."
-                    rows={3}
-                    aria-label="Nuevo comentario"
-                  />
-                  <div className={styles.formActions}>
-                    <button onClick={handleCreateComment} disabled={creating || !newComment.trim()}>
-                      {creating ? "Enviando…" : "Comentar"}
-                    </button>
-                  </div>
-                </div>
-
-                {commentsLoading ? (
-                  <div>Cargando comentarios…</div>
-                ) : comments.length === 0 ? (
-                  <div className={styles.emptyState}>Sin comentarios</div>
-                ) : (
-                  <ul className={styles.commentsList}>
-                    {comments.map((c) => (
-                      <li key={c.id} className={styles.commentItem}>
-                        <div className={styles.commentHeader}>
-                          <strong>{c.author?.name ?? "Usuario"}</strong>
-                          <span className={styles.commentDate}>{c.created_at ? new Date(c.created_at).toLocaleString("es-ES") : ""}</span>
-                        </div>
-                        <div className={styles.commentBody}>{c.body}</div>
-                        {currentUserId && c.author?.id === currentUserId && (
-                          <div className={styles.commentActions}>
-                            <button className={styles.deleteCommentBtn} onClick={() => handleDeleteComment(c.id)}>Eliminar</button>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            </>
-          ) : (
-            <div>No se encontró la tarea</div>
+          {/* Description */}
+          {task.description && (
+            <div className={styles.taskDescriptionSection}>
+              <h4 className={styles.taskDescriptionTitle}>
+                Description
+              </h4>
+              <p className={styles.taskDescriptionText}>
+                {task.description}
+              </p>
+            </div>
           )}
-        </main>
-      </div>
-    </div>
+
+          {/* Comments */}
+          <div className={styles.taskCommentsSection}>
+            <h4 className={styles.taskCommentsTitle}>
+              Comments
+            </h4>
+
+            <div className={styles.taskCommentInputContainer}>
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Write a comment..."
+                rows={3}
+                className={styles.taskCommentTextarea}
+              />
+              <div className={styles.taskCommentBtnContainer}>
+                <button
+                  onClick={handleCreateComment}
+                  disabled={creating || !newComment.trim()}
+                  className={`${styles.taskCommentBtn} ${creating || !newComment.trim() ? styles.taskCommentBtnDisabled : ''}`}
+                >
+                  {creating ? "Sending…" : "Comment"}
+                </button>
+              </div>
+            </div>
+
+            {commentsLoading ? (
+              <div className={styles.taskCommentsLoading}>
+                Loading comments…
+              </div>
+            ) : comments.length === 0 ? (
+              <div className={styles.taskCommentsEmpty}>
+                No comments yet
+              </div>
+            ) : (
+              <ul className={styles.taskCommentList}>
+                {comments.map((c) => (
+                  <li key={c.id} className={styles.taskCommentItem}>
+                    <div className={styles.taskCommentHeader}>
+                      <div>
+                        <strong className={styles.taskCommentAuthor}>
+                          {c.author?.name ?? "User"}
+                        </strong>
+                        <span className={styles.taskCommentDate}>
+                          {c.created_at ? new Date(c.created_at).toLocaleString("en-US") : ""}
+                        </span>
+                      </div>
+                      {currentUserId && c.author?.id === currentUserId && (
+                        <button
+                          onClick={() => handleDeleteComment(c.id)}
+                          className={styles.taskCommentDeleteBtn}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                    <div className={styles.taskCommentBody}>
+                      {c.body}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+    </DetalModal>
   );
 }
 
@@ -179,4 +244,4 @@ function getCurrentUserId(): number | null {
   }
 }
 
-export default TaskDetail;
+export default TaskDetailComponent;

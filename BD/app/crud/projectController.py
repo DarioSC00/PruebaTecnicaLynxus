@@ -25,7 +25,7 @@ class ProjectCRUD:
             and_(Project.owner_id == owner_id, Project.archived == False)
         )
         
-        # Búsqueda por nombre
+        # Search by name
         if search:
             query = query.filter(Project.name.ilike(f"%{search}%"))
         
@@ -44,7 +44,7 @@ class ProjectCRUD:
         ).first()
         
         if project:
-            update_data = obj_in.dict(exclude_unset=True)  # Solo campos que se enviaron
+            update_data = obj_in.dict(exclude_unset=True)  # Only fields that were sent
             for field, value in update_data.items():
                 setattr(project, field, value)
             

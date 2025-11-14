@@ -11,13 +11,14 @@ class CommentUpdate(BaseModel):
 
 class CommentRead(BaseModel):
     id: int
-    task_id: int
+    task_id: Optional[int] = None
+    project_id: Optional[int] = None
     author_id: int
     body: str
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CommentsPage(BaseModel):
     items: List[CommentRead]

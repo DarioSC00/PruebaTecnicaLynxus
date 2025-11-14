@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { loginWithEmail } from "./loginService/loginService";
 import styles from "./loginPage.module.css";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,10 +31,15 @@ export default function LoginPage() {
         // ignore storage errors
       }
 
+      // Show success toast
+      toast.success("Login successful! Welcome back.");
+      
       // Redirigir a la vista protegida
       router.push("/user");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error al iniciar sesión");
+      const errorMessage = err instanceof Error ? err.message : "Login error";
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
