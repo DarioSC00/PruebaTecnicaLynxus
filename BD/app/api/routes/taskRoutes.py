@@ -6,7 +6,7 @@ from typing import List, Optional
 from app.core.database import get_db
 
 # CRUD operations
-from app.crud import taskController as task_crud
+from app.crud.taskController import task_crud
 from app.crud.projectController import project_crud  
 
 # Schemas
@@ -29,19 +29,32 @@ def create_task(
     current_user: User = Depends(get_current_active_user)
 ):
     """Create a new task in a project"""
-    project = project_crud.get_by_id(db=db, project_id=project_id, owner_id=current_user.id)
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found or you don't have permission"
+    try:
+        # Verificar que el proyecto existe (sin verificar ownership - colaborativo)
+        from app.models.project import Project
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
+            )
+        task = task_crud.create(
+            db=db,
+            obj_in=task_in,
+            project_id=project_id,
+            creator_id=current_user.id
         )
-    task = task_crud.create(
-        db=db,
-        obj_in=task_in,
-        project_id=project_id,
-        creator_id=current_user.id
-    )
-    return task
+        return task
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print("ERROR CREATING TASK:", str(e))
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating task: {str(e)}"
+        )
 
 @router.get("/projects/{project_id}/tasks", response_model=List[TaskRead])
 def get_project_tasks(
@@ -56,11 +69,13 @@ def get_project_tasks(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get tasks from a project with filters"""
-    project = project_crud.get_by_id(db=db, project_id=project_id, owner_id=current_user.id)
+    # Verificar que el proyecto existe (sin verificar ownership - colaborativo)
+    from app.crud.projectController import project_crud
+    project = db.query(project_crud.model).filter(project_crud.model.id == project_id).first()
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found or you don't have permission"
+            detail="Project not found"
         )
     tasks = task_crud.get_by_project(
         db=db,
@@ -87,12 +102,7 @@ def get_task(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
-    project = project_crud.get_by_id(db=db, project_id=task.project_id, owner_id=current_user.id)
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to view this task"
-        )
+    # En un tablero colaborativo, cualquier usuario autenticado puede ver tareas
     return task
 
 @router.put("/tasks/{task_id}", response_model=TaskRead)

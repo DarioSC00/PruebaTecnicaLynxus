@@ -43,8 +43,10 @@ def decode_token(token: str) -> Dict:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=["HS256"])
         return payload
     except jwt.ExpiredSignatureError:
+        log.warning("Token expired: %s...", (token or '')[:20])
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expirado")
     except jwt.InvalidTokenError:
+        log.warning("Invalid token received (first 60 chars): %s", (token or '')[:60])
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
 
 # ------------------------
@@ -54,7 +56,12 @@ def get_current_active_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db)
 ) -> User:
-    payload = decode_token(token)
+    try:
+        log.debug("Authenticating token (preview): %s", (token or '')[:40])
+        payload = decode_token(token)
+    except HTTPException as e:
+        log.warning("Authentication failed while decoding token: %s", e.detail)
+        raise
     user_id: int = payload.get("sub")
     if user_id is None:
         raise HTTPException(

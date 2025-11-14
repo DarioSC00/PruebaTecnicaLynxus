@@ -1,7 +1,7 @@
 import api from "../../../../axios/axios";
 
 export type StatusType = "todo" | "doing" | "done";
-export type PriorityType = "low" | "med" | "high";
+export type PriorityType = "low" | "medium" | "high";
 
 export type UserItem = {
   id: number;
@@ -64,7 +64,7 @@ export const STATUS_OPTIONS: { value: StatusType; label: string; color: string }
 
 export const PRIORITY_OPTIONS: { value: PriorityType; label: string; color: string }[] = [
   { value: "low", label: "Baja", color: "#e5e7eb" },
-  { value: "med", label: "Media", color: "#fef3c7" },
+  { value: "medium", label: "Media", color: "#fef3c7" },
   { value: "high", label: "Alta", color: "#fee2e2" },
 ];
 
@@ -121,11 +121,37 @@ export async function getTask(taskId: number) {
  */
 export async function createTask(projectId: number, data: CreateTaskInput): Promise<TaskItem> {
   try {
-    const response = await api.post(`/projects/${projectId}/tasks`, data);
-    console.log("[taskService] createTask response:", response.data);
+    console.log("[taskService] createTask -> starting", { projectId, data });
+    console.log("[taskService] createTask -> api.baseURL:", api.defaults.baseURL);
+    const token = (typeof window !== 'undefined') ? localStorage.getItem('access_token') : null;
+    const online = (typeof navigator !== 'undefined') ? navigator.onLine : 'unknown';
+    console.log('[taskService] createTask -> env', { online, tokenPresent: !!token, tokenPreview: token ? `${token.slice(0,10)}...` : null });
+
+    // Build explicit config so we can log it if needed
+    const config = { headers: { 'Content-Type': 'application/json' } };
+    console.log('[taskService] createTask -> about to post to', `${api.defaults.baseURL}/projects/${projectId}/tasks`, 'with config', config);
+
+    const response = await api.post(`/projects/${projectId}/tasks`, data, config);
+
+    console.log('[taskService] createTask -> success response', { status: response.status, data: response.data });
     return response.data;
   } catch (error) {
-    console.error("[taskService] createTask error:", error);
+    try {
+      if ((error as any).response) {
+        console.error('[taskService] createTask error.response:', {
+          status: (error as any).response.status,
+          data: (error as any).response.data,
+          headers: (error as any).response.headers,
+        });
+      } else if ((error as any).request) {
+        console.error('[taskService] createTask no response received, request exists:', (error as any).request);
+      } else {
+        console.error('[taskService] createTask error message:', (error as any).message);
+      }
+      console.error('[taskService] createTask full error object:', error);
+    } catch (logErr) {
+      console.error('[taskService] createTask logging failed:', logErr);
+    }
     throw error;
   }
 }

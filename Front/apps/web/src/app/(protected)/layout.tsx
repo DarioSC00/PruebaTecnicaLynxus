@@ -6,7 +6,16 @@ import NavbarComponent from "@/features/universalComponents/navbarComponent/navb
 import "./layouth.css";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const isAuthenticated = true; // Replace with actual authentication logic
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+      setIsAuthenticated(!!token);
+    } catch {
+      setIsAuthenticated(false);
+    }
+  }, []);
 
   return (
     <div className="protectedLayout">

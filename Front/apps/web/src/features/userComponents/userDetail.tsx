@@ -7,7 +7,7 @@ import styles from "./userPage.module.css";
 
 type UserDetailType = userService.UserDetail;
 type ProjectItem = { id: number; name: string; description?: string };
-type TaskItem = { id: number; title: string; status: 'todo' | 'doing' | 'done'; priority: 'low' | 'med' | 'high' };
+type TaskItem = { id: number; title: string; status: 'todo' | 'doing' | 'done'; priority: 'low' | 'medium' | 'high' };
 
 // Helper seguro para obtener clases desde CSS modules
 function getStyle(stylesObj: Record<string,string>, key: string) {
@@ -141,7 +141,7 @@ export default function UserDetail({
                           </span>
                           <span className={`${styles.taskPriority} ${getStyle(styles, priorityKey)}`}>
                             {task.priority === 'low' && 'Baja'}
-                            {task.priority === 'med' && 'Media'}
+                            {task.priority === 'medium' && 'Media'}
                             {task.priority === 'high' && 'Alta'}
                           </span>
                         </div>

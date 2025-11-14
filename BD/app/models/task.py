@@ -25,8 +25,8 @@ class Task(Base):
     description = Column(Text, nullable=True)  # Text para descripciones largas
     
     # Estados y prioridad con Enum
-    status = Column(Enum(TaskStatus), nullable=False, default=TaskStatus.TODO, index=True)  # Index para filtros
-    priority = Column(Enum(TaskPriority), nullable=False, default=TaskPriority.MEDIUM, index=True)  # Index para filtros
+    status = Column(Enum(TaskStatus, values_callable=lambda obj: [e.value for e in obj]), nullable=False, default=TaskStatus.TODO, index=True)
+    priority = Column(Enum(TaskPriority, values_callable=lambda obj: [e.value for e in obj]), nullable=False, default=TaskPriority.MEDIUM, index=True)
     
     # Fecha límite
     due_date = Column(DateTime(timezone=True), nullable=True, index=True)  # Index para filtrar vencidas

@@ -1,9 +1,11 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+  // Use 127.0.0.1 to avoid potential localhost IPv6 mismatch
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000",
   headers: { "Content-Type": "application/json" },
-  withCredentials: true,
+  // Desactivar cookies en peticiones CORS por ahora (el token va en Authorization)
+  withCredentials: false,
   timeout: 10000,
 });
 
@@ -19,5 +21,50 @@ api.interceptors.request.use((config) => {
   }
   return config;
 }, (error) => Promise.reject(error));
+
+// Logging interceptor (verbose - remove when debugging finished)
+api.interceptors.request.use((config) => {
+  try {
+    const token = (typeof window !== 'undefined') ? localStorage.getItem('access_token') : null;
+    const fullUrl = (config.baseURL || '') + (config.url || '');
+    console.log('[axios] request ->', {
+      method: config.method,
+      url: fullUrl,
+      headers: config.headers,
+      hasToken: !!token,
+      tokenPreview: token ? `${token.slice(0,10)}...` : null,
+      data: (config as any).data || undefined,
+    });
+  } catch (err) {
+    console.error('[axios] request logging error', err);
+  }
+  return config;
+}, (error) => Promise.reject(error));
+
+api.interceptors.response.use((response) => {
+  try {
+    console.log('[axios] response <-', {
+      url: response.config && `${response.config.baseURL || ''}${response.config.url || ''}`,
+      status: response.status,
+      data: response.data,
+    });
+  } catch (err) {
+    console.error('[axios] response logging error', err);
+  }
+  return response;
+}, (error) => {
+  try {
+    console.error('[axios] response error <-', {
+      message: error?.message,
+      code: error?.code,
+      url: error?.config && `${error.config.baseURL || ''}${error.config.url || ''}`,
+      request: error?.request ? '[request exists]' : null,
+      response: error?.response ? { status: error.response.status, data: error.response.data } : null,
+    });
+  } catch (err) {
+    console.error('[axios] response error logging failed', err);
+  }
+  return Promise.reject(error);
+});
 
 export default api;

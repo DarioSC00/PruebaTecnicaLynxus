@@ -23,7 +23,8 @@ app.add_middleware(
 # Incluir routers
 app.include_router(userRoutes.router, prefix="/users", tags=["users"])
 app.include_router(projectRoutes.router, prefix="/projects", tags=["projects"])
-app.include_router(taskRoutes.router, prefix="/tasks", tags=["tasks"])
+# Incluir taskRoutes sin prefijo porque las rutas dentro ya contienen /tasks y /projects/{id}/tasks
+app.include_router(taskRoutes.router)
 app.include_router(commentRoutes.router, prefix="/comments", tags=["comments"])
 
 @app.get("/", tags=["health"])

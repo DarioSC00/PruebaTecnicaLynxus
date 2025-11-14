@@ -29,4 +29,7 @@ class CommentOut(BaseModel):
     id: int
     body: str
     author: Optional[UserOut] = None
-    created_at: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

@@ -6,7 +6,7 @@ from .commentSchema import CommentOut
 
 # Tipos literales para estado y prioridad
 StatusType = Literal["todo", "doing", "done"]
-PriorityType = Literal["low", "med", "high"]
+PriorityType = Literal["low", "medium", "high"]
 
 # Modelo para crear una tarea
 class TaskCreate(BaseModel):
@@ -56,6 +56,9 @@ class TaskOut(BaseModel):
     description: Optional[str] = None
     status: str
     priority: str
-    due_date: Optional[str] = None
+    due_date: Optional[datetime] = None
     assignee: Optional[UserOut] = None
     comments: List[CommentOut] = []
+
+    class Config:
+        from_attributes = True

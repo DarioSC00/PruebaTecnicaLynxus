@@ -37,8 +37,16 @@ export default function NavbarComponent(): React.ReactElement {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    router.push("/login");
+    // Clear auth-related localStorage entries and redirect to login
+    try {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("refresh_token");
+    } catch (e) {
+      console.error('logout: storage clear failed', e);
+    }
+    // replace so back button won't return to protected pages
+    router.replace("/login");
   };
 
 

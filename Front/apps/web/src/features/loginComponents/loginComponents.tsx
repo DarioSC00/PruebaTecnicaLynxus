@@ -23,6 +23,12 @@ export default function LoginPage() {
 
       // Guardar token
       localStorage.setItem("access_token", response.access_token);
+      // Guardar info del usuario para uso en UI
+      try {
+        localStorage.setItem("user", JSON.stringify(response.user));
+      } catch {
+        // ignore storage errors
+      }
 
       // Redirigir a la vista protegida
       router.push("/user");

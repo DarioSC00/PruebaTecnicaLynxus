@@ -2,7 +2,6 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
-from sqlmodel import select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
@@ -60,24 +59,7 @@ def get_projects(
     return projects
 
 
-@router.get("/{project_id}", response_model=ProjectResponse)
-def get_project(
-    project_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """Obtener proyecto por ID"""
-    project = project_crud.get_by_id(
-        db=db, 
-        project_id=project_id, 
-        owner_id=current_user.id
-    )
-    if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Proyecto no encontrado"
-        )
-    return project
+# Endpoint GET /{project_id} movido a la línea 136 (read_project)
 
 
 @router.put("/{project_id}", response_model=ProjectResponse)
@@ -135,18 +117,15 @@ def get_projects_by_user(
 @router.get("/{project_id}", response_model=ProjectOut)
 def read_project(
     project_id: int, 
-    session: Session = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    stmt = (
-        select(Project)
-        .where(Project.id == project_id)
-        .options(
-            selectinload(Project.owner),
-            selectinload(Project.tasks).selectinload(Task.assignee),
-            selectinload(Project.tasks).selectinload(Task.comments).selectinload(Comment.author),
-        )
-    )
-    project = session.exec(stmt).first()
+    """Obtener proyecto por ID con todas sus tareas"""
+    project = db.query(Project).options(
+        selectinload(Project.owner),
+        selectinload(Project.tasks).selectinload(Task.assignee),
+        selectinload(Project.tasks).selectinload(Task.comments).selectinload(Comment.author)
+    ).filter(Project.id == project_id).first()
+    
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     return project

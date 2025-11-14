@@ -66,7 +66,7 @@ export default function TaskList() {
       header: "Prioridad",
       accessor: (t: taskService.TaskItem) => (
         <span className={styles.priorityBadge} data-priority={t.priority}>
-          {t.priority === "low" ? "Baja" : t.priority === "med" ? "Media" : "Alta"}
+          {t.priority === "low" ? "Baja" : t.priority === "medium" ? "Media" : "Alta"}
         </span>
       ),
     },
@@ -134,7 +134,7 @@ export default function TaskList() {
         >
           <option value="">Todas las prioridades</option>
           <option value="low">Baja</option>
-          <option value="med">Media</option>
+          <option value="medium">Media</option>
           <option value="high">Alta</option>
         </select>
       </div>

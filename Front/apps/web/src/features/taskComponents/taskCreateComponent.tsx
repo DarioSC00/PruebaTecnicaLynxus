@@ -48,35 +48,39 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
     title: "",
     description: "",
     status: "todo",
-    priority: "med",
+    priority: "medium",
     due_date: null,
     assignee_id: null,
   });
-
-  // Sincronizar assignee_id con el primer usuario asignado
-  useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      assignee_id: assignedUsers.length > 0 ? assignedUsers[0].id : null
-    }));
-  }, [assignedUsers]);
 
   const handleChange = (field: keyof taskService.CreateTaskInput, value: string | null) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAddUser = () => {
+  const handleAddUser = (setValues: React.Dispatch<React.SetStateAction<taskService.CreateTaskInput>>) => {
     if (!selectedUserId) return;
     const userId = Number(selectedUserId);
     const user = users.find(u => u.id === userId);
     if (user && !assignedUsers.find(u => u.id === userId)) {
-      setAssignedUsers(prev => [...prev, user]);
+      const newAssignedUsers = [...assignedUsers, user];
+      setAssignedUsers(newAssignedUsers);
+      // Actualizar assignee_id con el primer usuario directamente en el estado del modal
+      if (newAssignedUsers.length === 1) {
+        setValues(prev => ({ ...prev, assignee_id: user.id }));
+      }
       setSelectedUserId("");
     }
   };
 
-  const handleRemoveUser = (userId: number) => {
-    setAssignedUsers(prev => prev.filter(u => u.id !== userId));
+  const handleRemoveUser = (userId: number, setValues: React.Dispatch<React.SetStateAction<taskService.CreateTaskInput>>) => {
+    const newAssignedUsers = assignedUsers.filter(u => u.id !== userId);
+    setAssignedUsers(newAssignedUsers);
+    // Si quitamos el único usuario o el primero, actualizar assignee_id en el estado del modal
+    if (newAssignedUsers.length === 0) {
+      setValues(prev => ({ ...prev, assignee_id: null }));
+    } else if (assignedUsers[0]?.id === userId) {
+      setValues(prev => ({ ...prev, assignee_id: newAssignedUsers[0].id }));
+    }
   };
 
   // Cargar usuarios cuando se abre el modal
@@ -103,21 +107,39 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
       return;
     }
 
+    console.log("Creating task for projectId:", projectId);
+    
     setLoading(true);
     try {
-      await taskService.createTask(projectId, values);
-      handleClose();
+      // Preparar datos para enviar al backend
+      const taskData: taskService.CreateTaskInput = {
+        title: values.title,
+        description: values.description || undefined,
+        status: values.status || "todo",
+        priority: values.priority || "medium",
+        // Convertir fecha a ISO datetime si existe
+        due_date: values.due_date ? `${values.due_date}T23:59:59` : null,
+        assignee_id: values.assignee_id || null,
+      };
+
+      console.log("Sending task data:", taskData);
+      await taskService.createTask(projectId, taskData);
+      
+      // Limpiar formulario
       setFormData({
         title: "",
         description: "",
         status: "todo",
-        priority: "med",
+        priority: "medium",
         due_date: null,
         assignee_id: null,
       });
       setAssignedUsers([]);
       setSelectedUserId("");
+      
+      // Notificar creación ANTES de cerrar
       onCreated?.();
+      handleClose();
     } catch (err) {
       console.error("Error creating task:", err);
       alert("Error al crear la tarea");
@@ -302,7 +324,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                 }}
               >
                 <option value="low">Baja</option>
-                <option value="med">Media</option>
+                <option value="medium">Media</option>
                 <option value="high">Alta</option>
               </select>
             </div>
@@ -363,7 +385,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
               </select>
               <button
                 type="button"
-                onClick={handleAddUser}
+                onClick={() => handleAddUser(setValues)}
                 disabled={!selectedUserId}
                 style={{
                   padding: "0.625rem 1rem",
@@ -410,7 +432,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
                     <span style={{ color: "#374151" }}>{user.name || user.email}</span>
                     <button
                       type="button"
-                      onClick={() => handleRemoveUser(user.id)}
+                      onClick={() => handleRemoveUser(user.id, setValues)}
                       style={{
                         background: "none",
                         border: "none",

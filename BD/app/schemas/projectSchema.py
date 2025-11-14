@@ -37,3 +37,6 @@ class ProjectOut(BaseModel):
     archived: bool = False
     owner: Optional[UserOut] = None
     tasks: List[TaskOut] = []
+
+    class Config:
+        from_attributes = True

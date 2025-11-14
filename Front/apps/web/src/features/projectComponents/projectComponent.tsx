@@ -13,7 +13,7 @@ type Task = {
   title: string;
   description?: string;
   status: "todo" | "doing" | "done" | string;
-  priority: "low" | "med" | "high" | string;
+  priority: "low" | "medium" | "high" | string;
   due_date?: string | null;
   assignee_id?: number | null;
 };
@@ -50,12 +50,18 @@ export default function ProjectList() {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [projectDetailOpen, setProjectDetailOpen] = useState(false);
   const [taskCreateOpenFor, setTaskCreateOpenFor] = useState<number | null>(null);
-  const reloadTasksFor = (projectId?: number) => {
+  const reloadTasksFor = async (projectId?: number) => {
     if (!projectId) return;
-    // forzar recarga: limpiar cache de tareas y volver a abrir si estaba expandido
-    setTasksByProject((s) => ({ ...s, [projectId]: undefined as unknown as Task[] }));
-    // reabrir panel para forzar fetch en toggleExpand
-    setExpanded((s) => ({ ...s, [projectId]: true }));
+    try {
+      setTasksLoading((s) => ({ ...s, [projectId]: true }));
+      const res = await projectService.getProject(projectId);
+      const tasks: Task[] = (res?.tasks ?? []) as Task[];
+      setTasksByProject((s) => ({ ...s, [projectId]: tasks }));
+    } catch (err) {
+      console.error("Error reloading project tasks:", err);
+    } finally {
+      setTasksLoading((s) => ({ ...s, [projectId]: false }));
+    }
   };
 
   useEffect(() => {
@@ -262,7 +268,8 @@ export default function ProjectList() {
           projectId={taskCreateOpenFor}
           open={true}
           onCreated={() => {
-            // recargar tareas del proyecto y cerrar modal
+            // expandir panel y recargar tareas del proyecto
+            setExpanded((s) => ({ ...s, [taskCreateOpenFor]: true }));
             reloadTasksFor(taskCreateOpenFor);
             setTaskCreateOpenFor(null);
           }}
