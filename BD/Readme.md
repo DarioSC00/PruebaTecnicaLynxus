@@ -7,7 +7,8 @@ API RESTful construida con **FastAPI** para gestionar proyectos, tareas, usuario
 - **FastAPI** - Framework web moderno y rápido
 - **SQLAlchemy** - ORM para Python
 - **Pydantic** - Validación de datos
-- **MySQL** - Base de datos relacional
+- **PostgreSQL** - Base de datos relacional
+- **Alembic** - Migraciones de base de datos
 - **JWT** - Autenticación basada en tokens
 - **Uvicorn** - Servidor ASGI
 
@@ -55,7 +56,7 @@ BD/
 ### Requisitos Previos
 
 - Python 3.11+
-- MySQL 8.0+
+- PostgreSQL 15+
 - pip o poetry
 
 ### Pasos
@@ -91,7 +92,7 @@ Crear archivo `.env` en la raíz del proyecto BD:
 
 ```env
 # Database
-DATABASE_URL=mysql+pymysql://root:password@localhost:3306/tasks_db
+DATABASE_URL=postgresql://postgres:password@localhost:5432/tasks_db
 
 # JWT
 SECRET_KEY=tu_clave_secreta_muy_segura_aqui
