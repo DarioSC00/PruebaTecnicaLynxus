@@ -29,7 +29,6 @@ import {
   Collapse,
   List,
   ListItem,
-  ListItemText,
   Tooltip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
@@ -380,46 +379,47 @@ export default function ProjectList() {
                                         "&:hover": {
                                           bgcolor: "action.hover",
                                         },
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
                                       }}
                                       onClick={() => openTask(task.id)}
                                     >
-                                      <ListItemText
-                                        primary={
-                                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <Typography variant="body1">{task.title}</Typography>
-                                            <Chip
-                                              label={
-                                                task.status === "todo"
-                                                  ? "To Do"
-                                                  : task.status === "doing"
-                                                  ? "In Progress"
-                                                  : "Completed"
-                                              }
-                                              color={getStatusColor(task.status)}
-                                              size="small"
-                                            />
-                                            <Chip
-                                              label={
-                                                task.priority === "low"
-                                                  ? "Low"
-                                                  : task.priority === "medium"
-                                                  ? "Medium"
-                                                  : "High"
-                                              }
-                                              color={getPriorityColor(task.priority)}
-                                              size="small"
-                                            />
-                                          </Box>
-                                        }
-                                        secondary={
-                                          <Typography variant="body2" color="text.secondary">
-                                            Due:{" "}
-                                            {task.due_date
-                                              ? new Date(task.due_date).toLocaleDateString()
-                                              : "-"}
-                                          </Typography>
-                                        }
-                                      />
+                                      <Box sx={{ flex: 1 }}>
+                                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                          {task.title}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                          Due:{" "}
+                                          {task.due_date
+                                            ? new Date(task.due_date).toLocaleDateString()
+                                            : "-"}
+                                        </Typography>
+                                      </Box>
+                                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                        <Chip
+                                          label={
+                                            task.status === "todo"
+                                              ? "To Do"
+                                              : task.status === "doing"
+                                              ? "In Progress"
+                                              : "Completed"
+                                          }
+                                          color={getStatusColor(task.status)}
+                                          size="small"
+                                        />
+                                        <Chip
+                                          label={
+                                            task.priority === "low"
+                                              ? "Low"
+                                              : task.priority === "medium"
+                                              ? "Medium"
+                                              : "High"
+                                          }
+                                          color={getPriorityColor(task.priority)}
+                                          size="small"
+                                        />
+                                      </Box>
                                     </ListItem>
                                   ))}
                                 </List>

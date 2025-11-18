@@ -22,16 +22,12 @@ def add_member_to_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Add a member to the project (only the owner can do it)"""
+    """Add a member to the project (any authenticated user can do it)"""
     
     # Verify that the project exists
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    
-    # Verify that the current user is the owner
-    if project.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Only the owner can add members")
     
     # Verify that the user to add exists
     user_to_add = db.query(User).filter(User.id == request.user_id).first()
@@ -62,10 +58,7 @@ def get_project_members(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Verify that the user has access to the project (is owner or member)
-    if current_user.id != project.owner_id and current_user not in project.members:
-        raise HTTPException(status_code=403, detail="You don't have access to this project")
-    
+    # Any authenticated user can view project members
     return project.members
 
 
@@ -76,19 +69,11 @@ def remove_member_from_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Remove a member from the project (only the owner can do it)"""
+    """Remove a member from the project (any authenticated user can do it)"""
     
     project = db.query(Project).filter(Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    
-    # Verify that the current user is the owner
-    if project.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Only the owner can remove members")
-    
-    # Don't allow the owner to remove themselves
-    if user_id == current_user.id:
-        raise HTTPException(status_code=400, detail="Owner cannot be removed from the project")
     
     # Find the user to remove
     user_to_remove = db.query(User).filter(User.id == user_id).first()

@@ -180,9 +180,9 @@ export default function TaskList() {
             <TableHead>
               <TableRow sx={{ bgcolor: "grey.50" }}>
                 <TableCell sx={{ fontWeight: 600 }}>Task</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Due Date</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Priority</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Due Date</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -227,12 +227,6 @@ export default function TaskList() {
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Chip label={statusLabel} color={getStatusColor(task.status)} size="small" />
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={priorityLabel} color={getPriorityColor(task.priority)} size="small" />
-                    </TableCell>
-                    <TableCell>
                       <Typography
                         variant="body2"
                         sx={{
@@ -242,6 +236,12 @@ export default function TaskList() {
                       >
                         {dueDateFormatted} {isOverdue && "⚠️"}
                       </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={statusLabel} color={getStatusColor(task.status)} size="small" />
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={priorityLabel} color={getPriorityColor(task.priority)} size="small" />
                     </TableCell>
                   </TableRow>
                 );

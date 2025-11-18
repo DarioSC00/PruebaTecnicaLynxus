@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -13,9 +13,13 @@ import {
   Box,
   Typography,
   CircularProgress,
+  Autocomplete,
+  Chip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import * as projectService from "./projectService/projectService";
+import { listUsers } from "../userComponents/userService/userService";
+import type { UserItem } from "../userComponents/userService/userService";
 import styles from "./projectPage.module.css";
 import { toast } from "react-toastify";
 
@@ -37,6 +41,29 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
     name: "",
     description: "",
   });
+  const [selectedMembers, setSelectedMembers] = useState<UserItem[]>([]);
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
+
+  // Cargar usuarios al abrir el diálogo
+  useEffect(() => {
+    if (open) {
+      loadUsers();
+    }
+  }, [open]);
+
+  async function loadUsers() {
+    setLoadingUsers(true);
+    try {
+      const result = await listUsers({ page_size: 100 });
+      setUsers(result.items);
+    } catch (err) {
+      console.error("Error loading users:", err);
+      toast.error("Error al cargar usuarios");
+    } finally {
+      setLoadingUsers(false);
+    }
+  }
 
   const handleInputChange = (field: keyof CreateProjectInput, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -50,10 +77,21 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
     }
     setSubmitting(true);
     try {
-      await projectService.createProject(formData);
+      // Crear el proyecto primero
+      const newProject = await projectService.createProject(formData);
+      
+      // Si hay miembros seleccionados, agregarlos
+      if (selectedMembers.length > 0 && newProject?.id) {
+        const memberPromises = selectedMembers.map((member) =>
+          projectService.addProjectMember(newProject.id, member.id)
+        );
+        await Promise.all(memberPromises);
+      }
+
       toast.success("Project created successfully");
       setOpen(false);
       setFormData({ name: "", description: "" });
+      setSelectedMembers([]);
       if (typeof onCreated === "function") onCreated();
       router.push("/project");
     } catch (err: unknown) {
@@ -66,10 +104,30 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
 
   return (
     <>
-      <button className={styles.btn} onClick={() => setOpen(true)}>
-        <AddIcon sx={{ mr: 1 }} />
+      <Button
+        variant="contained"
+        onClick={() => setOpen(true)}
+        startIcon={<AddIcon />}
+        sx={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          fontWeight: 600,
+          fontSize: '0.95rem',
+          textTransform: 'none',
+          px: 3,
+          py: 1.5,
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #5568d3 0%, #6941a0 100%)',
+            boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)',
+            transform: 'translateY(-2px)',
+          },
+          transition: 'all 0.3s ease',
+        }}
+      >
         New Project
-      </button>
+      </Button>
 
       <Dialog 
         open={open} 
@@ -133,6 +191,39 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
                 }}
               />
 
+              <Autocomplete
+                multiple
+                options={users}
+                getOptionLabel={(option) => `${option.name} (${option.email})`}
+                value={selectedMembers}
+                onChange={(_, newValue) => setSelectedMembers(newValue)}
+                loading={loadingUsers}
+                disabled={submitting}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Add Project Members"
+                    placeholder="Select members to add to the project"
+                    variant="outlined"
+                  />
+                )}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      label={option.name}
+                      {...getTagProps({ index })}
+                      key={option.id}
+                      sx={{ borderRadius: 1 }}
+                    />
+                  ))
+                }
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+
               <Box sx={{ 
                 mt: 1, 
                 p: 2.5, 
@@ -148,7 +239,7 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
                   <br />
                   • <strong>Detailed description:</strong> Include goals, scope, and expected outcomes
                   <br />
-                  • <strong>Team collaboration:</strong> Add team members after creating the project
+                  • <strong>Team collaboration:</strong> Add members during creation or later from the project page
                   <br />
                   • <strong>Task management:</strong> Break down work into manageable tasks with priorities
                 </Typography>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import DetalModal from "../universalComponents/detailUniversalComponents/detailModal";
+import ConfirmDialog from "../universalComponents/confirmUniversalComponent/ConfirmDialog";
 import * as projectService from "./projectService/projectService";
 import * as userService from "../userComponents/userService/userService";
 import { toast } from "react-toastify";
@@ -23,12 +24,31 @@ type User = {
 export default function AddMembersModal({ projectId, open, onClose, onMemberAdded }: Props) {
   const [users, setUsers] = useState<User[]>([]);
   const [members, setMembers] = useState<User[]>([]);
+  const [projectName, setProjectName] = useState<string>("");
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState("");
   const [memberSearchTerm, setMemberSearchTerm] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  
+  // Confirm dialog states
+  const [confirmDeleteMember, setConfirmDeleteMember] = useState(false);
+  const [pendingMemberId, setPendingMemberId] = useState<number | null>(null);
+
+  // Cargar nombre del proyecto
+  useEffect(() => {
+    if (open && projectId) {
+      (async () => {
+        try {
+          const project = await projectService.getProject(projectId);
+          setProjectName(project.name || "Project");
+        } catch (err) {
+          console.error("Error loading project:", err);
+          setProjectName("Project");
+        }
+      })();
+    }
+  }, [open, projectId]);
 
   // Cargar usuarios disponibles
   useEffect(() => {
@@ -92,7 +112,6 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
       }
       
       setSelectedUserId("");
-      setSearchTerm("");
       onMemberAdded?.();
     } catch (err: unknown) {
       console.error("Error adding member:", err);
@@ -104,12 +123,18 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
     }
   };
 
-  const handleRemoveMember = async (userId: number) => {
+  const handleRemoveMember = (userId: number) => {
+    setPendingMemberId(userId);
+    setConfirmDeleteMember(true);
+  };
+
+  const confirmRemoveMemberAction = async () => {
+    if (!pendingMemberId) return;
     setSubmitting(true);
     try {
-      await projectService.removeProjectMember(projectId, userId);
+      await projectService.removeProjectMember(projectId, pendingMemberId);
       toast.success("Member removed successfully");
-      setMembers(prev => prev.filter(m => m.id !== userId));
+      setMembers(prev => prev.filter(m => m.id !== pendingMemberId));
       onMemberAdded?.();
     } catch (err: unknown) {
       console.error("Error removing member:", err);
@@ -118,16 +143,13 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
       toast.error(errorMsg);
     } finally {
       setSubmitting(false);
+      setPendingMemberId(null);
+      setConfirmDeleteMember(false);
     }
   };
 
   // Filtrar usuarios disponibles (que no son miembros)
-  const availableUsers = users.filter(u => 
-    !members.find(m => m.id === u.id) &&
-    (searchTerm === "" || 
-     u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     u.email?.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const availableUsers = users.filter(u => !members.find(m => m.id === u.id));
 
   // Filtrar miembros actuales
   const filteredMembers = members.filter(m =>
@@ -136,9 +158,28 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
     m.email?.toLowerCase().includes(memberSearchTerm.toLowerCase())
   );
 
-  return (
-    <DetalModal open={open} onClose={onClose} title="Manage Project Members">
+  return (<>
+    <DetalModal open={open} onClose={onClose} title={`Manage Members - ${projectName}`}>
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", minWidth: "500px" }}>
+        
+        {/* Información del proyecto */}
+        <div style={{
+          padding: "1rem",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          borderRadius: "8px",
+          color: "white"
+        }}>
+          <div style={{ fontSize: "0.875rem", opacity: 0.9, marginBottom: "0.25rem" }}>
+            Managing members for:
+          </div>
+          <div style={{ fontSize: "1.25rem", fontWeight: 700 }}>
+            {projectName}
+          </div>
+          <div style={{ fontSize: "0.875rem", opacity: 0.9, marginTop: "0.5rem" }}>
+            Current members: {members.length}
+          </div>
+        </div>
+
         {/* Sección: Agregar nuevo miembro */}
         <div>
           <h3 style={{ 
@@ -147,50 +188,10 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
             color: "#111827", 
             marginBottom: "1rem" 
           }}>
-            Add New Member
+            Add New Member to Project
           </h3>
           
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {/* Input de búsqueda */}
-            <div>
-              <label 
-                htmlFor="user-search"
-                style={{
-                  display: "block",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  color: "#374151",
-                  marginBottom: "0.5rem"
-                }}
-              >
-                Search Users
-              </label>
-              <input
-                id="user-search"
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by name or email..."
-                style={{
-                  width: "100%",
-                  padding: "0.625rem 0.875rem",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "8px",
-                  fontSize: "0.875rem",
-                  outline: "none",
-                  boxSizing: "border-box"
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#6366f1";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#e2e8f0";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              />
-            </div>
-
             {/* Select de usuario */}
             <div style={{ display: "flex", gap: "0.75rem" }}>
               <select
@@ -217,7 +218,7 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
                   e.currentTarget.style.boxShadow = "none";
                 }}
               >
-                <option value="">Select a user...</option>
+                <option value="">Select a user to add...</option>
                 {loadingUsers ? (
                   <option value="">Loading users...</option>
                 ) : availableUsers.length === 0 ? (
@@ -225,7 +226,7 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
                 ) : (
                   availableUsers.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {user.name || user.email}
+                      {user.name} ({user.email})
                     </option>
                   ))
                 )}
@@ -425,5 +426,19 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
         </div>
       </div>
     </DetalModal>
-  );
+
+    <ConfirmDialog
+      open={confirmDeleteMember}
+      onClose={() => {
+        setConfirmDeleteMember(false);
+        setPendingMemberId(null);
+      }}
+      onConfirm={confirmRemoveMemberAction}
+      title="Remove Member"
+      message="Are you sure you want to remove this member from the project?"
+      confirmText="Remove"
+      cancelText="Cancel"
+      type="warning"
+    />
+  </>);
 }

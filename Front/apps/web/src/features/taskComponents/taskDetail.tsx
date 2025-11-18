@@ -22,6 +22,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CommentIcon from "@mui/icons-material/Comment";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SendIcon from "@mui/icons-material/Send";
+import ConfirmDialog from "../universalComponents/confirmUniversalComponent/ConfirmDialog";
 import * as taskService from "./taskService/taskService";
 import * as commentService from "../commentComponents/commentService/commentService";
 import type { TaskDetail, CommentItem } from "./taskService/taskService";
@@ -42,6 +43,10 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [creating, setCreating] = useState(false);
+
+  // Confirm dialog states
+  const [confirmDeleteComment, setConfirmDeleteComment] = useState(false);
+  const [pendingCommentId, setPendingCommentId] = useState<number | null>(null);
 
   const currentUserId = getCurrentUserId();
 
@@ -68,7 +73,10 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
     setCommentsLoading(true);
     try {
       const res = await commentService.listComments(taskId);
-      setComments(Array.isArray(res) ? res : (res?.items ?? []));
+      const commentsList = Array.isArray(res) ? res : (res?.items ?? []);
+      console.log("[taskDetail] comments loaded:", commentsList);
+      console.log("[taskDetail] currentUserId:", currentUserId);
+      setComments(commentsList);
     } catch (err: any) {
       console.error("Error loading comments:", err);
       if (err?.response?.status === 404 || err?.response?.status === 403 || err?.response?.status === 401) {
@@ -100,15 +108,23 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
   };
 
   const handleDeleteComment = async (commentId: number) => {
-    if (!confirm("Delete comment?")) return;
+    setPendingCommentId(commentId);
+    setConfirmDeleteComment(true);
+  };
+
+  const confirmDeleteCommentAction = async () => {
+    if (!pendingCommentId) return;
     try {
-      await commentService.deleteComment(commentId);
+      await commentService.deleteComment(pendingCommentId);
       toast.success("Comment deleted successfully");
-      setComments((c) => c.filter((x) => x.id !== commentId));
+      setComments((c) => c.filter((x) => x.id !== pendingCommentId));
       onUpdate?.();
     } catch (err) {
       console.error("Error deleting comment:", err);
       toast.error("Could not delete comment");
+    } finally {
+      setPendingCommentId(null);
+      setConfirmDeleteComment(false);
     }
   };
 
@@ -132,7 +148,7 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
     <Dialog 
       open={open} 
       onClose={onClose}
-      maxWidth="lg"
+      maxWidth="xl"
       fullWidth
       PaperProps={{
         sx: {
@@ -168,9 +184,9 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
             <Typography color="textSecondary">Task not found</Typography>
           </Box>
         ) : (
-          <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr', height: '600px' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', minHeight: '650px', maxHeight: '75vh' }}>
             {/* LEFT COLUMN: Task Details */}
-            <Box sx={{ p: 4, borderRight: '1px solid #e5e7eb', overflowY: 'auto' }}>
+            <Box sx={{ p: 4, pr: 3, borderRight: '1px solid #e5e7eb', overflowY: 'auto' }}>
               {/* Status and Priority */}
               <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                 <Chip 
@@ -360,6 +376,20 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
           </Box>
         )}
       </DialogContent>
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={confirmDeleteComment}
+        onClose={() => {
+          setConfirmDeleteComment(false);
+          setPendingCommentId(null);
+        }}
+        onConfirm={confirmDeleteCommentAction}
+        title="Delete Comment"
+        message="Are you sure you want to delete this comment? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
     </Dialog>
   );
 }
