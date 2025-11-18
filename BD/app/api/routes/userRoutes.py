@@ -1,6 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Path, Query, Body
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.sql import func
 from datetime import timedelta
 from pydantic import BaseModel, EmailStr
@@ -8,7 +8,8 @@ from pydantic import BaseModel, EmailStr
 from app.api.dependencies import get_db
 from app.crud.userController import user_crud
 from app.models.user import User
-from app.core.security import verify_password, create_access_token
+from app.core.security import verify_password, create_access_token, get_password_hash
+from app.schemas.userSchema import UserCreate
 from app.core.config import settings
 
 router = APIRouter()
@@ -94,6 +95,7 @@ def read_users(
                 "id": u.id,
                 "name": getattr(u, "name", None),
                 "email": u.email,
+                "is_active": u.is_active,
                 "created_at": getattr(u, "created_at", None),
             }
             for u in items
@@ -105,12 +107,89 @@ def read_users(
 
 @router.get("/{user_id}", status_code=status.HTTP_200_OK)
 def read_user(user_id: int = Path(..., gt=0), db: Session = Depends(get_db)):
-    user = user_crud.get(db, id=user_id)
+    # Load user with all relationships
+    user = db.query(User).options(
+        selectinload(User.projects),  # Projects owned by user
+        selectinload(User.member_projects),  # Projects where user is member
+        selectinload(User.assigned_tasks)  # Tasks assigned to user
+    ).filter(User.id == user_id).first()
+    
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    # Combine owned projects and member projects
+    all_projects = []
+    
+    # Add owned projects
+    if user.projects:
+        for p in user.projects:
+            all_projects.append({
+                "id": p.id,
+                "name": p.name,
+                "description": p.description,
+                "role": "owner"
+            })
+    
+    # Add member projects
+    if user.member_projects:
+        for p in user.member_projects:
+            # Avoid duplicates if user is both owner and member
+            if not any(proj["id"] == p.id for proj in all_projects):
+                all_projects.append({
+                    "id": p.id,
+                    "name": p.name,
+                    "description": p.description,
+                    "role": "member"
+                })
+    
+    # Format tasks
+    tasks = []
+    if user.assigned_tasks:
+        for t in user.assigned_tasks:
+            tasks.append({
+                "id": t.id,
+                "title": t.title,
+                "description": t.description,
+                "status": t.status,
+                "priority": t.priority,
+                "due_date": t.due_date.isoformat() if t.due_date else None,
+                "project_id": t.project_id
+            })
+    
     return {
         "id": user.id,
         "name": getattr(user, "name", None),
         "email": user.email,
+        "is_active": user.is_active,
         "created_at": getattr(user, "created_at", None),
+        "projects": all_projects,
+        "tasks": tasks
+    }
+
+
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+def register(
+    user_in: UserCreate,
+    db: Session = Depends(get_db),
+):
+    """Register a new user and return user data (without auto-login)."""
+    # Check if email already exists
+    existing = user_crud.get_by_email(db, email=user_in.email)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    # Create user
+    created = user_crud.create(db, user_in)
+
+    # Return user data without token (user must login separately)
+    return {
+        "message": "User registered successfully",
+        "user": {
+            "id": created.id,
+            "email": created.email,
+            "name": created.name,
+        },
     }

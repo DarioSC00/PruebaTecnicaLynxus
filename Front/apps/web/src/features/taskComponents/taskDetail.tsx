@@ -1,11 +1,30 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import DetalModal from "../universalComponents/detailUniversalComponents/detailModal";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Box,
+  Typography,
+  Chip,
+  TextField,
+  Button,
+  Paper,
+  Avatar,
+  Divider,
+  CircularProgress,
+  IconButton,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import PersonIcon from "@mui/icons-material/Person";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CommentIcon from "@mui/icons-material/Comment";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SendIcon from "@mui/icons-material/Send";
 import * as taskService from "./taskService/taskService";
 import * as commentService from "../commentComponents/commentService/commentService";
 import type { TaskDetail, CommentItem } from "./taskService/taskService";
-import styles from "./taskPage.module.css";
 import { toast } from "react-toastify";
 
 // Aceptar onUpdate opcional para que el consumidor pueda pasarlo
@@ -49,16 +68,12 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
     setCommentsLoading(true);
     try {
       const res = await commentService.listComments(taskId);
-      // esperar array
       setComments(Array.isArray(res) ? res : (res?.items ?? []));
     } catch (err: any) {
       console.error("Error loading comments:", err);
-      // Si es 404, 403, o 401, simplemente mostrar vacío sin error
-      // 401 significa token expirado - usuario puede seguir usando la app, solo sin comentarios
       if (err?.response?.status === 404 || err?.response?.status === 403 || err?.response?.status === 401) {
         setComments([]);
       } else {
-        // Solo mostrar error para otros casos (500, network, etc.)
         toast.error("Could not load comments");
         setComments([]);
       }
@@ -75,7 +90,7 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
       toast.success("Comment created successfully");
       setNewComment("");
       await loadComments();
-      onUpdate?.(); // notificar cambio al componente padre
+      onUpdate?.();
     } catch (err) {
       console.error("Error creating comment:", err);
       toast.error("Could not create comment");
@@ -90,145 +105,262 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
       await commentService.deleteComment(commentId);
       toast.success("Comment deleted successfully");
       setComments((c) => c.filter((x) => x.id !== commentId));
-      onUpdate?.(); // notify parent component of change
+      onUpdate?.();
     } catch (err) {
       console.error("Error deleting comment:", err);
       toast.error("Could not delete comment");
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "done": return { bgcolor: '#d1fae5', color: '#065f46' };
+      case "doing": return { bgcolor: '#dbeafe', color: '#1e40af' };
+      default: return { bgcolor: '#f3f4f6', color: '#374151' };
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high": return { bgcolor: '#fee2e2', color: '#991b1b' };
+      case "medium": return { bgcolor: '#fef3c7', color: '#92400e' };
+      default: return { bgcolor: '#f0fdf4', color: '#166534' };
+    }
+  };
+
   return (
-    <DetalModal open={open} onClose={onClose} title={task?.title ?? "Task Detail"} data={task}>
-      {loading ? (
-        <p className={styles.taskDetailLoading}>Loading…</p>
-      ) : !task ? (
-        <p className={styles.taskDetailNoData}>Task not found</p>
-      ) : (
-        <div>
-          {/* Task information */}
-          <div className={styles.taskInfoContainer}>
-            <div className={styles.taskInfoGrid}>
-              <div className={styles.taskInfoRow}>
-                <strong className={styles.taskInfoLabel}>Project ID:</strong>
-                <span>#{task.project_id}</span>
-              </div>
-              <div className={styles.taskInfoRow}>
-                <strong className={styles.taskInfoLabel}>Assigned to:</strong>
-                <span>{task.assignee?.name ?? task.assignee?.email ?? "-"}</span>
-              </div>
-              <div className={styles.taskInfoRow}>
-                <strong className={styles.taskInfoLabel}>Status:</strong>
-                <span className={`${styles.taskStatusBadge} ${
-                  task.status === "done" ? styles.taskStatusDone : 
-                  task.status === "doing" ? styles.taskStatusDoing : 
-                  styles.taskStatusTodo
-                }`}>
-                  {task.status === "todo" ? "To Do" : task.status === "doing" ? "In Progress" : "Completed"}
-                </span>
-              </div>
-              <div className={styles.taskInfoRow}>
-                <strong className={styles.taskInfoLabel}>Priority:</strong>
-                <span className={`${styles.taskPriorityBadge} ${
-                  task.priority === "high" ? styles.taskPriorityHigh : 
-                  task.priority === "medium" ? styles.taskPriorityMedium : 
-                  styles.taskPriorityLow
-                }`}>
-                  {task.priority === "low" ? "Low" : task.priority === "medium" ? "Medium" : "High"}
-                </span>
-              </div>
-              <div className={styles.taskInfoRow}>
-                <strong className={styles.taskInfoLabel}>Due Date:</strong>
-                <span>{task.due_date ? new Date(task.due_date).toLocaleString("en-US") : "-"}</span>
-              </div>
-              <div className={styles.taskInfoRow}>
-                <strong className={styles.taskInfoLabel}>Created:</strong>
-                <span>{task.created_at ? new Date(task.created_at).toLocaleString("en-US") : "-"}</span>
-              </div>
-              <div className={styles.taskInfoRow}>
-                <strong className={styles.taskInfoLabel}>Updated:</strong>
-                <span>{task.updated_at ? new Date(task.updated_at).toLocaleString("en-US") : "-"}</span>
-              </div>
-            </div>
-          </div>
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          maxHeight: '90vh',
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        fontSize: '1.5rem',
+        fontWeight: 700,
+        py: 3,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <span>{task?.title ?? "Task Detail"}</span>
+        <IconButton onClick={onClose} sx={{ color: 'white' }}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      
+      <DialogContent sx={{ p: 0 }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8 }}>
+            <CircularProgress />
+            <Typography sx={{ mt: 2, color: '#64748b' }}>Loading...</Typography>
+          </Box>
+        ) : !task ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography color="textSecondary">Task not found</Typography>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr', height: '600px' }}>
+            {/* LEFT COLUMN: Task Details */}
+            <Box sx={{ p: 4, borderRight: '1px solid #e5e7eb', overflowY: 'auto' }}>
+              {/* Status and Priority */}
+              <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                <Chip 
+                  label={task.status === "todo" ? "To Do" : task.status === "doing" ? "In Progress" : "Completed"}
+                  sx={{ ...getStatusColor(task.status), fontWeight: 600 }}
+                />
+                <Chip 
+                  label={`${task.priority === "low" ? "Low" : task.priority === "medium" ? "Medium" : "High"} Priority`}
+                  sx={{ ...getPriorityColor(task.priority), fontWeight: 600 }}
+                />
+              </Box>
 
-          {/* Description */}
-          {task.description && (
-            <div className={styles.taskDescriptionSection}>
-              <h4 className={styles.taskDescriptionTitle}>
-                Description
-              </h4>
-              <p className={styles.taskDescriptionText}>
-                {task.description}
-              </p>
-            </div>
-          )}
+              {/* Description */}
+              {task.description && (
+                <Paper elevation={0} sx={{ p: 3, mb: 3, bgcolor: '#f9fafb', borderRadius: 2 }}>
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: '#374151' }}>
+                    📝 Description
+                  </Typography>
+                  <Typography sx={{ color: '#4b5563', lineHeight: 1.7 }}>
+                    {task.description}
+                  </Typography>
+                </Paper>
+              )}
 
-          {/* Comments */}
-          <div className={styles.taskCommentsSection}>
-            <h4 className={styles.taskCommentsTitle}>
-              Comments
-            </h4>
+              {/* Task Information Grid */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
+                <Paper elevation={0} sx={{ p: 2, bgcolor: '#fef3c7', borderRadius: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <PersonIcon sx={{ fontSize: 20, color: '#92400e' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Assigned to
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontWeight: 600, color: '#78350f' }}>
+                    {task.assignee?.name ?? task.assignee?.email ?? "-"}
+                  </Typography>
+                </Paper>
 
-            <div className={styles.taskCommentInputContainer}>
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Write a comment..."
-                rows={3}
-                className={styles.taskCommentTextarea}
-              />
-              <div className={styles.taskCommentBtnContainer}>
-                <button
+                <Paper elevation={0} sx={{ p: 2, bgcolor: '#dbeafe', borderRadius: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <CalendarTodayIcon sx={{ fontSize: 20, color: '#1e40af' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#1e40af', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Due Date
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontWeight: 600, color: '#1e3a8a' }}>
+                    {task.due_date ? new Date(task.due_date).toLocaleDateString("en-US", {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric'
+                    }) : "-"}
+                  </Typography>
+                </Paper>
+
+                <Paper elevation={0} sx={{ p: 2, bgcolor: '#e0e7ff', borderRadius: 2 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#4338ca', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 1 }}>
+                    Project ID
+                  </Typography>
+                  <Typography sx={{ fontWeight: 600, color: '#4338ca' }}>
+                    #{task.project_id}
+                  </Typography>
+                </Paper>
+
+                <Paper elevation={0} sx={{ p: 2, bgcolor: '#f3e8ff', borderRadius: 2 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#6b21a8', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 1 }}>
+                    Created
+                  </Typography>
+                  <Typography sx={{ fontWeight: 600, color: '#6b21a8', fontSize: '0.875rem' }}>
+                    {task.created_at ? new Date(task.created_at).toLocaleDateString("en-US") : "-"}
+                  </Typography>
+                </Paper>
+              </Box>
+            </Box>
+
+            {/* RIGHT COLUMN: Comments */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', bgcolor: '#f9fafb' }}>
+              <Box sx={{ p: 3, borderBottom: '1px solid #e5e7eb' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <CommentIcon sx={{ color: '#667eea' }} />
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#374151' }}>
+                    Comments
+                  </Typography>
+                  <Chip label={comments.length} size="small" sx={{ bgcolor: '#667eea', color: 'white', fontWeight: 700 }} />
+                </Box>
+                
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="💭 Write a comment..."
+                  variant="outlined"
+                  sx={{
+                    mb: 1,
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'white',
+                      borderRadius: 2,
+                    }
+                  }}
+                />
+                <Button
+                  fullWidth
+                  variant="contained"
                   onClick={handleCreateComment}
                   disabled={creating || !newComment.trim()}
-                  className={`${styles.taskCommentBtn} ${creating || !newComment.trim() ? styles.taskCommentBtnDisabled : ''}`}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5568d3 0%, #63408b 100%)',
+                    },
+                  }}
                 >
-                  {creating ? "Sending…" : "Comment"}
-                </button>
-              </div>
-            </div>
+                  {creating ? (
+                    <>
+                      <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <SendIcon sx={{ mr: 1, fontSize: 20 }} />
+                      Comment
+                    </>
+                  )}
+                </Button>
+              </Box>
 
-            {commentsLoading ? (
-              <div className={styles.taskCommentsLoading}>
-                Loading comments…
-              </div>
-            ) : comments.length === 0 ? (
-              <div className={styles.taskCommentsEmpty}>
-                No comments yet
-              </div>
-            ) : (
-              <ul className={styles.taskCommentList}>
-                {comments.map((c) => (
-                  <li key={c.id} className={styles.taskCommentItem}>
-                    <div className={styles.taskCommentHeader}>
-                      <div>
-                        <strong className={styles.taskCommentAuthor}>
-                          {c.author?.name ?? "User"}
-                        </strong>
-                        <span className={styles.taskCommentDate}>
-                          {c.created_at ? new Date(c.created_at).toLocaleString("en-US") : ""}
-                        </span>
-                      </div>
-                      {currentUserId && c.author?.id === currentUserId && (
-                        <button
-                          onClick={() => handleDeleteComment(c.id)}
-                          className={styles.taskCommentDeleteBtn}
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                    <div className={styles.taskCommentBody}>
-                      {c.body}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
-    </DetalModal>
+              <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+                {commentsLoading ? (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <CircularProgress size={32} />
+                    <Typography sx={{ mt: 2, color: '#64748b', fontSize: '0.875rem' }}>
+                      Loading comments...
+                    </Typography>
+                  </Box>
+                ) : comments.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', py: 6 }}>
+                    <CommentIcon sx={{ fontSize: 48, color: '#cbd5e1', mb: 2 }} />
+                    <Typography sx={{ color: '#64748b', fontWeight: 600 }}>
+                      No comments yet
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                      Be the first to comment!
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {comments.map((c) => (
+                      <Paper key={c.id} elevation={0} sx={{ p: 2, borderRadius: 2, bgcolor: 'white', border: '1px solid #e5e7eb' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Avatar sx={{ width: 32, height: 32, bgcolor: '#667eea', fontSize: '0.875rem' }}>
+                              {(c.author?.name ?? "U")[0].toUpperCase()}
+                            </Avatar>
+                            <Box>
+                              <Typography sx={{ fontWeight: 700, fontSize: '0.875rem', color: '#374151' }}>
+                                {c.author?.name ?? "User"}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                                {c.created_at ? new Date(c.created_at).toLocaleString("en-US", {
+                                  month: 'short',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                }) : ""}
+                              </Typography>
+                            </Box>
+                          </Box>
+                          {currentUserId && c.author?.id === currentUserId && (
+                            <IconButton size="small" onClick={() => handleDeleteComment(c.id)} sx={{ color: '#ef4444' }}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                        </Box>
+                        <Divider sx={{ my: 1 }} />
+                        <Typography sx={{ color: '#4b5563', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                          {c.body}
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 

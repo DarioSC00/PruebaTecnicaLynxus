@@ -3,7 +3,7 @@
 import React from "react";
 import SidebarComponent from "@/features/universalComponents/sidebarComponents/sidebarComponent";
 import NavbarComponent from "@/features/universalComponents/navbarComponent/navbarComponent";
-import "./layouth.css";
+import { Box } from "@mui/material";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
@@ -18,14 +18,21 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   }, []);
 
   return (
-    <div className="protectedLayout">
+    <Box sx={{ display: "flex", minHeight: "100vh" }}>
       {isAuthenticated && <SidebarComponent />}
-      <div className="mainWrapper">
+      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
         {isAuthenticated && <NavbarComponent />}
-        <main className="mainContent" role="main">
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            bgcolor: "grey.50",
+            overflow: "auto",
+          }}
+        >
           {children}
-        </main>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }

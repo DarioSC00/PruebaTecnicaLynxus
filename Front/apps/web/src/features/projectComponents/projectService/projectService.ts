@@ -67,7 +67,7 @@ export async function getProject(id: number): Promise<ProjectDetail> {
   }
 }
 
-// listProjects - el backend devuelve array directo List[ProjectResponse]
+// listProjects - el backend ahora devuelve {items, total, page, page_size}
 export async function listProjects(params: { q?: string; page?: number; page_size?: number } = {}): Promise<{ items: ProjectItem[]; total: number }> {
   try {
     const { q = "", page = 1, page_size = 50 } = params;
@@ -75,7 +75,15 @@ export async function listProjects(params: { q?: string; page?: number; page_siz
     const res = await api.get("/projects/", { params: { search: q, skip, limit: page_size } });
     console.log("[projectService] listProjects response:", res.status, res.data);
     
-    // El backend devuelve array directo
+    // El backend ahora devuelve {items, total, page, page_size}
+    if (res.data && typeof res.data === 'object' && 'items' in res.data) {
+      return { 
+        items: res.data.items || [], 
+        total: res.data.total || 0 
+      };
+    }
+    
+    // Fallback si el formato es diferente
     const items = Array.isArray(res.data) ? res.data : [];
     return { items, total: items.length };
   } catch (err) {

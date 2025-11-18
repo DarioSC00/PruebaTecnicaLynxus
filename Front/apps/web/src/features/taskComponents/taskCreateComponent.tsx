@@ -1,7 +1,25 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import CreateUniversalModal from "../universalComponents/createUniversalComponents/createUniversalModal";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  MenuItem,
+  Box,
+  Typography,
+  Chip,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+} from "@mui/material";
+import AddTaskIcon from "@mui/icons-material/AddTask";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import CloseIcon from "@mui/icons-material/Close";
 import * as taskService from "./taskService/taskService";
 import * as userService from "../userComponents/userService/userService";
 import { toast } from "react-toastify";
@@ -14,24 +32,7 @@ type Props = {
   onCreated?: () => void;
 };
 
-// Tipado local mínimo para el modal (evita `any`).
-type ModalProps = {
-  open: boolean;
-  onClose: () => void;
-  title?: string;
-  submitLabel?: string;
-  initialValues?: taskService.CreateTaskInput;
-  onSubmit?: (values: taskService.CreateTaskInput) => Promise<void> | void;
-  renderForm: (args: {
-    values: taskService.CreateTaskInput;
-    setValues: React.Dispatch<React.SetStateAction<taskService.CreateTaskInput>>;
-    submitting: boolean;
-  }) => React.ReactNode;
-};
-const Modal = CreateUniversalModal as unknown as React.ComponentType<ModalProps>;
-
 export default function TaskCreateComponent({ projectId, defaultOpen = false, open, onClose, onCreated }: Props) {
-  // Usar open si se proporciona, sino defaultOpen
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const modalOpen = open !== undefined ? open : isOpen;
   
@@ -39,6 +40,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
     setIsOpen(false);
     onClose?.();
   };
+  
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<userService.UserItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -58,33 +60,30 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleAddUser = (setValues: React.Dispatch<React.SetStateAction<taskService.CreateTaskInput>>) => {
+  const handleAddUser = () => {
     if (!selectedUserId) return;
     const userId = Number(selectedUserId);
     const user = users.find(u => u.id === userId);
     if (user && !assignedUsers.find(u => u.id === userId)) {
       const newAssignedUsers = [...assignedUsers, user];
       setAssignedUsers(newAssignedUsers);
-      // Actualizar assignee_id con el primer usuario directamente en el estado del modal
       if (newAssignedUsers.length === 1) {
-        setValues(prev => ({ ...prev, assignee_id: user.id }));
+        setFormData(prev => ({ ...prev, assignee_id: user.id }));
       }
       setSelectedUserId("");
     }
   };
 
-  const handleRemoveUser = (userId: number, setValues: React.Dispatch<React.SetStateAction<taskService.CreateTaskInput>>) => {
+  const handleRemoveUser = (userId: number) => {
     const newAssignedUsers = assignedUsers.filter(u => u.id !== userId);
     setAssignedUsers(newAssignedUsers);
-    // Si quitamos el único usuario o el primero, actualizar assignee_id en el estado del modal
     if (newAssignedUsers.length === 0) {
-      setValues(prev => ({ ...prev, assignee_id: null }));
+      setFormData(prev => ({ ...prev, assignee_id: null }));
     } else if (assignedUsers[0]?.id === userId) {
-      setValues(prev => ({ ...prev, assignee_id: newAssignedUsers[0].id }));
+      setFormData(prev => ({ ...prev, assignee_id: newAssignedUsers[0].id }));
     }
   };
 
-  // Cargar usuarios cuando se abre el modal
   useEffect(() => {
     if (modalOpen && users.length === 0) {
       (async () => {
@@ -102,34 +101,28 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
     }
   }, [modalOpen, users.length]);
 
-  // now receives the values object (CreateTaskInput) instead of a FormEvent
-  const handleSubmit = async (values: taskService.CreateTaskInput) => {
-    if (!values.title?.trim()) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title?.trim()) {
       toast.error("Title is required");
       return;
     }
 
-    console.log("Creating task for projectId:", projectId);
-    
     setLoading(true);
     try {
-      // Preparar datos para enviar al backend
       const taskData: taskService.CreateTaskInput = {
-        title: values.title,
-        description: values.description || undefined,
-        status: values.status || "todo",
-        priority: values.priority || "medium",
-        // Convertir fecha a ISO datetime si existe
-        due_date: values.due_date ? `${values.due_date}T23:59:59` : null,
-        assignee_id: values.assignee_id || null,
+        title: formData.title,
+        description: formData.description || undefined,
+        status: formData.status || "todo",
+        priority: formData.priority || "medium",
+        due_date: formData.due_date ? `${formData.due_date}T23:59:59` : null,
+        assignee_id: formData.assignee_id || null,
       };
 
-      console.log("Sending task data:", taskData);
       await taskService.createTask(projectId, taskData);
       
       toast.success("Task created successfully");
       
-      // Limpiar formulario
       setFormData({
         title: "",
         description: "",
@@ -141,7 +134,6 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
       setAssignedUsers([]);
       setSelectedUserId("");
       
-      // Notificar creación ANTES de cerrar
       onCreated?.();
       handleClose();
     } catch (err) {
@@ -153,362 +145,243 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
   };
 
   return (
-    <Modal
-      open={modalOpen}
+    <Dialog 
+      open={modalOpen} 
       onClose={handleClose}
-      title="Create New Task"
-      submitLabel={loading ? "Creating…" : "Create"}
-      initialValues={formData}
-        onSubmit={async (values: taskService.CreateTaskInput) => {
-          await handleSubmit(values);
-        }}
-        renderForm={({ values, setValues }) => (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {/* Título */}
-          <div>
-            <label
-              htmlFor="title"
-              style={{
-                display: "block",
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                color: "#374151",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Title <span style={{ color: "#ef4444" }}>*</span>
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={values.title}
-              onChange={(e) => setValues(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="Task title"
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        fontSize: '1.5rem',
+        fontWeight: 700,
+        py: 3,
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AddTaskIcon />
+          <span>Create New Task</span>
+        </Box>
+      </DialogTitle>
+      
+      <form onSubmit={handleSubmit}>
+        <DialogContent sx={{ pt: 4, pb: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              label="Task Title"
+              fullWidth
               required
-              style={{
-                width: "100%",
-                padding: "0.625rem",
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                fontSize: "0.875rem",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#6366f1";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "#e5e7eb";
-                e.currentTarget.style.boxShadow = "none";
+              value={formData.title}
+              onChange={(e) => handleChange("title", e.target.value)}
+              placeholder="Enter a descriptive task title"
+              variant="outlined"
+              disabled={loading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  fontSize: '1.05rem',
+                }
               }}
             />
-          </div>
 
-          {/* Descripción */}
-          <div>
-            <label
-              htmlFor="description"
-              style={{
-                display: "block",
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                color: "#374151",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Description
-            </label>
-            <textarea
-              id="description"
-              value={values.description}
-              onChange={(e) => setValues(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Detailed task description"
+            <TextField
+              label="Description"
+              fullWidth
+              multiline
               rows={4}
-              style={{
-                width: "100%",
-                padding: "0.625rem",
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                fontSize: "0.875rem",
-                outline: "none",
-                resize: "vertical",
-                fontFamily: "inherit",
-                boxSizing: "border-box",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#6366f1";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "#e5e7eb";
-                e.currentTarget.style.boxShadow = "none";
+              value={formData.description || ""}
+              onChange={(e) => handleChange("description", e.target.value)}
+              placeholder="Provide detailed task description, requirements, and acceptance criteria..."
+              variant="outlined"
+              disabled={loading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                }
               }}
             />
-          </div>
 
-          {/* Estado y Prioridad */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-            <div>
-              <label
-                htmlFor="status"
-                style={{
-                  display: "block",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  color: "#374151",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                Status
-              </label>
-              <select
-                id="status"
-                value={values.status}
-                onChange={(e) => setValues(prev => ({ ...prev, status: e.target.value as taskService.StatusType }))}
-                style={{
-                  width: "100%",
-                  padding: "0.625rem",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  fontSize: "0.875rem",
-                  outline: "none",
-                  cursor: "pointer",
-                  boxSizing: "border-box",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#6366f1";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#e5e7eb";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                <option value="todo">To Do</option>
-                <option value="doing">In Progress</option>
-                <option value="done">Completed</option>
-              </select>
-            </div>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formData.status || "todo"}
+                  onChange={(e) => handleChange("status", e.target.value)}
+                  label="Status"
+                  disabled={loading}
+                  sx={{ borderRadius: 2 }}
+                >
+                  <MenuItem value="todo">📋 To Do</MenuItem>
+                  <MenuItem value="doing">⚙️ In Progress</MenuItem>
+                  <MenuItem value="done">✅ Completed</MenuItem>
+                </Select>
+              </FormControl>
 
-            <div>
-              <label
-                htmlFor="priority"
-                style={{
-                  display: "block",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  color: "#374151",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                Priority
-              </label>
-              <select
-                id="priority"
-                value={values.priority}
-                onChange={(e) => setValues(prev => ({ ...prev, priority: e.target.value as taskService.PriorityType }))}
-                style={{
-                  width: "100%",
-                  padding: "0.625rem",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  fontSize: "0.875rem",
-                  outline: "none",
-                  cursor: "pointer",
-                  boxSizing: "border-box",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#6366f1";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#e5e7eb";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-          </div>
+              <FormControl fullWidth>
+                <InputLabel>Priority</InputLabel>
+                <Select
+                  value={formData.priority || "medium"}
+                  onChange={(e) => handleChange("priority", e.target.value)}
+                  label="Priority"
+                  disabled={loading}
+                  sx={{ borderRadius: 2 }}
+                >
+                  <MenuItem value="low">🟢 Low</MenuItem>
+                  <MenuItem value="medium">🟡 Medium</MenuItem>
+                  <MenuItem value="high">🔴 High</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
 
-          {/* Asignar a Usuario */}
-          <div>
-            <label
-              htmlFor="assignee_select"
-              style={{
-                display: "block",
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                color: "#374151",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Assign users
-            </label>
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
-              <select
-                id="assignee_select"
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-                disabled={loadingUsers}
-                style={{
-                  flex: 1,
-                  padding: "0.625rem",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  fontSize: "0.875rem",
-                  outline: "none",
-                  cursor: "pointer",
-                  boxSizing: "border-box",
-                  backgroundColor: loadingUsers ? "#f9fafb" : "white",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "#6366f1";
-                  e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "#e5e7eb";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                <option value="">Select user...</option>
-                {loadingUsers ? (
-                  <option value="">Loading users...</option>
-                ) : (
-                  users
-                    .filter(u => !assignedUsers.find(au => au.id === u.id))
-                    .map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name || user.email}
-                      </option>
-                    ))
-                )}
-              </select>
-              <button
-                type="button"
-                onClick={() => handleAddUser(setValues)}
-                disabled={!selectedUserId}
-                style={{
-                  padding: "0.625rem 1rem",
-                  background: selectedUserId ? "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)" : "#e5e7eb",
-                  color: selectedUserId ? "white" : "#94a3b8",
-                  border: "none",
-                  borderRadius: "8px",
-                  fontSize: "0.875rem",
-                  fontWeight: 600,
-                  cursor: selectedUserId ? "pointer" : "not-allowed",
-                  transition: "all 0.2s ease",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                + Add
-              </button>
-            </div>
-            
-            {/* Lista de usuarios asignados */}
-            {assignedUsers.length > 0 && (
-              <div style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "0.5rem",
-                padding: "0.75rem",
-                background: "#f9fafb",
-                borderRadius: "8px",
-                border: "1px solid #e5e7eb",
-              }}>
-                {assignedUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      padding: "0.375rem 0.75rem",
-                      background: "white",
-                      borderRadius: "6px",
-                      border: "1px solid #e5e7eb",
-                      fontSize: "0.875rem",
-                    }}
+            <Box>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: '#374151' }}>
+                Assign Team Members
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                <FormControl fullWidth disabled={loadingUsers}>
+                  <InputLabel>Select User</InputLabel>
+                  <Select
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                    label="Select User"
+                    sx={{ borderRadius: 2 }}
                   >
-                    <span style={{ color: "#374151" }}>{user.name || user.email}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveUser(user.id, setValues)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#ef4444",
-                        cursor: "pointer",
-                        fontSize: "1rem",
-                        lineHeight: 1,
-                        padding: "0 0.25rem",
+                    <MenuItem value="">
+                      <em>{loadingUsers ? "Loading users..." : "Select a user..."}</em>
+                    </MenuItem>
+                    {users
+                      .filter(u => !assignedUsers.find(au => au.id === u.id))
+                      .map((user) => (
+                        <MenuItem key={user.id} value={user.id}>
+                          {user.name || user.email}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+                <Button
+                  onClick={handleAddUser}
+                  disabled={!selectedUserId}
+                  variant="contained"
+                  sx={{
+                    minWidth: '120px',
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  }}
+                >
+                  <PersonAddIcon sx={{ mr: 0.5 }} />
+                  Add
+                </Button>
+              </Box>
+              
+              {assignedUsers.length > 0 ? (
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: 1,
+                  p: 2,
+                  bgcolor: '#f9fafb',
+                  borderRadius: 2,
+                  border: '1px solid #e5e7eb',
+                }}>
+                  {assignedUsers.map((user) => (
+                    <Chip
+                      key={user.id}
+                      label={user.name || user.email}
+                      onDelete={() => handleRemoveUser(user.id)}
+                      deleteIcon={<CloseIcon />}
+                      sx={{
+                        bgcolor: 'white',
+                        border: '1px solid #e5e7eb',
+                        '& .MuiChip-deleteIcon': {
+                          color: '#ef4444',
+                        }
                       }}
-                      aria-label={`Remove ${user.name || user.email}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            {assignedUsers.length === 0 && (
-              <div style={{
-                padding: "0.75rem",
-                textAlign: "center",
-                color: "#94a3b8",
-                fontSize: "0.85rem",
-                background: "#f9fafb",
-                borderRadius: "8px",
-                border: "1px dashed #e5e7eb",
-              }}>
-                No assigned users
-              </div>
-            )}
-          </div>
+                    />
+                  ))}
+                </Box>
+              ) : (
+                <Box sx={{
+                  p: 2,
+                  textAlign: 'center',
+                  color: '#94a3b8',
+                  bgcolor: '#f9fafb',
+                  borderRadius: 2,
+                  border: '1px dashed #e5e7eb',
+                }}>
+                  <Typography variant="body2">
+                    No assigned users yet
+                  </Typography>
+                </Box>
+              )}
+            </Box>
 
-          {/* Fecha límite */}
-          <div>
-            <label
-              htmlFor="due_date"
-              style={{
-                display: "block",
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                color: "#374151",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Due date
-            </label>
-            <input
-              id="due_date"
+            <TextField
+              label="Due Date"
               type="date"
-              value={values.due_date || ""}
-              onChange={(e) => setValues(prev => ({ ...prev, due_date: e.target.value || null }))}
-              style={{
-                width: "100%",
-                padding: "0.625rem",
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                fontSize: "0.875rem",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "#6366f1";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "#e5e7eb";
-                e.currentTarget.style.boxShadow = "none";
+              fullWidth
+              value={formData.due_date || ""}
+              onChange={(e) => handleChange("due_date", e.target.value || null)}
+              InputLabelProps={{ shrink: true }}
+              disabled={loading}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                }
               }}
             />
-          </div>
-        </div>
-        )}
-      />
+          </Box>
+        </DialogContent>
+        
+        <DialogActions sx={{ px: 3, pb: 3, pt: 2, gap: 2 }}>
+          <Button
+            onClick={handleClose}
+            disabled={loading}
+            variant="outlined"
+            sx={{ 
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 3,
+              py: 1,
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={loading}
+            variant="contained"
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 4,
+              py: 1,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #5568d3 0%, #63408b 100%)',
+              },
+            }}
+          >
+            {loading ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} />
+                Creating...
+              </>
+            ) : (
+              <>
+                <AddTaskIcon sx={{ mr: 1 }} />
+                Create Task
+              </>
+            )}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   );
 }

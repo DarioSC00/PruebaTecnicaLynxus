@@ -2,17 +2,23 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  min-width: 400px;
+  gap: 1.5rem;
+  min-width: 450px;
   max-width: 600px;
   padding: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .form {
+    min-width: 100%;
+  }
 }
 
 /* cuerpo del formulario (controles) */
 .body {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
   padding: 0.5rem 0;
 }
 
@@ -21,33 +27,38 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f1f5f9;
 }
 
-/* botones */
+/* botones mejorados */
 .btn {
-  padding: 0.625rem 1.25rem;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   color: white;
   border: none;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.btn:hover {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+.btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
 .btn:disabled {
@@ -57,20 +68,21 @@
 }
 
 .btnGhost {
-  padding: 0.625rem 1.25rem;
-  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
   background: white;
   color: #64748b;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid #e2e8f0;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   transition: all 0.2s ease;
 }
 
-.btnGhost:hover {
+.btnGhost:hover:not(:disabled) {
   background: #f8fafc;
   border-color: #cbd5e1;
+  color: #475569;
 }
 
 .btnGhost:disabled {
@@ -78,26 +90,82 @@
   cursor: not-allowed;
 }
 
-/* error */
+/* error mejorado */
 .error {
-  color: #dc2626;
-  background: #fef2f2;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
+  color: #991b1b;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
   font-size: 0.875rem;
-  border: 1px solid #fecaca;
+  border: 1.5px solid #fecaca;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-/* labels */
+/* labels mejorados */
 .form label {
   display: block;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
+  font-weight: 600;
+  color: #334155;
   margin-bottom: 0.5rem;
+  letter-spacing: 0.01em;
 }
 
-/* controles genéricos: si usas inputs aquí se pueden estilar */
+.form label .required {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+/* inputs y controles del formulario - hermosos */
+.form input[type="text"],
+.form input[type="email"],
+.form input[type="password"],
+.form input[type="number"],
+.form input[type="date"],
+.form textarea,
+.form select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: #1e293b;
+  background: white;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  outline: none;
+}
+
+.form input:focus,
+.form textarea:focus,
+.form select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  background: #fefeff;
+}
+
+.form input::placeholder,
+.form textarea::placeholder {
+  color: #94a3b8;
+}
+
+.form textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+}
+
+.form select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.5rem;
+}
 .form input,
 .form textarea,
 .form select {

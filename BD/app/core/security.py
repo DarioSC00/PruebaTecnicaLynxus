@@ -18,15 +18,17 @@ log = logging.getLogger(__name__)
 # 🔑 OAuth2 for FastAPI
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+
 # ------------------------
-# PASSWORD FUNCTIONS (NO HASH - DEVELOPMENT ONLY)
+# PASSWORD FUNCTIONS (plain text - development only)
 # ------------------------
 def verify_password(plain_password: str, stored_password: str) -> bool:
-    """Direct comparison without hash (development only)"""
+    """Direct comparison without hashing (development only)."""
     return plain_password == stored_password
 
+
 def get_password_hash(password: str) -> str:
-    """Returns password unchanged (development only)"""
+    """Return password as-is (no hashing) - development only."""
     return password
 
 # ------------------------

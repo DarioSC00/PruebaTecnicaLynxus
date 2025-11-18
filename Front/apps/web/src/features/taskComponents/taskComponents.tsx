@@ -1,11 +1,34 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import TableUniversal from "../universalComponents/tableUniversalComponents/tableUniversal";
 import TaskDetail from "./taskDetail";
 import * as taskService from "./taskService/taskService";
-import styles from "./taskPage.module.css";
 import { toast } from "react-toastify";
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  CircularProgress,
+  InputAdornment,
+  Breadcrumbs,
+  Link,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid,
+} from "@mui/material";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import SearchIcon from "@mui/icons-material/Search";
 
 export default function TaskList() {
   const [tasks, setTasks] = useState<taskService.TaskItem[]>([]);
@@ -43,142 +66,191 @@ export default function TaskList() {
     return () => { mounted = false; };
   }, [query, statusFilter, priorityFilter, reloadKey]);
 
-  const columns = [
-    {
-      id: "task",
-      header: "Task",
-      accessor: (t: taskService.TaskItem) => (
-        <div className={styles.taskCell}>
-          <div className={styles.taskTitle}>{t.title}</div>
-          <div className={styles.taskDescription}>{t.description || "Sin descripción"}</div>
-        </div>
-      ),
-    },
-    {
-      id: "status",
-      header: "Status",
-      accessor: (t: taskService.TaskItem) => (
-        <span className={styles.statusBadge} data-status={t.status}>
-          {t.status === "todo" ? "To Do" : t.status === "doing" ? "In Progress" : "Completed"}
-        </span>
-      ),
-    },
-    {
-      id: "priority",
-      header: "Priority",
-      accessor: (t: taskService.TaskItem) => (
-        <span className={styles.priorityBadge} data-priority={t.priority}>
-          {t.priority === "low" ? "Low" : t.priority === "medium" ? "Medium" : "High"}
-        </span>
-      ),
-    },
-    {
-      id: "due_date",
-      header: "Due Date",
-      accessor: (t: taskService.TaskItem) => {
-        if (!t.due_date) return "-";
-        const date = new Date(t.due_date);
-        const now = new Date();
-        const isOverdue = date < now;
-        const formatted = date.toLocaleDateString("es-ES", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        });
-        return (
-          <span className={isOverdue ? styles.taskDueDateOverdue : styles.taskDueDateNormal}>
-            {formatted} {isOverdue && "⚠️"}
-          </span>
-        );
-      },
-    },
-  ];
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "todo":
+        return "default";
+      case "doing":
+        return "info";
+      case "done":
+        return "success";
+      default:
+        return "default";
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "low":
+        return "success";
+      case "medium":
+        return "warning";
+      case "high":
+        return "error";
+      default:
+        return "default";
+    }
+  };
 
   return (
-    <div className={styles.pageContainer}>
-      <div className={styles.breadcrumb}>
-        <span className={styles.breadcrumbText}>Tasks</span>
-      </div>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Breadcrumbs sx={{ mb: 3 }}>
+        <Link underline="hover" color="inherit" href="#">
+          Home
+        </Link>
+        <Typography color="text.primary">Tasks</Typography>
+      </Breadcrumbs>
 
-      <header className={styles.pageHeader}>
-        <h2 className={styles.pageCount}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+          Tasks
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
           {loading ? "Loading..." : `${tasks.length} task${tasks.length !== 1 ? "s" : ""}`}
-        </h2>
-        <div className={styles.pageActions}>
-          <input
-            className={styles.searchInput}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search tasks..."
-          />
-        </div>
-      </header>
+        </Typography>
+      </Box>
 
-      {/* Filters */}
-      <div className={styles.filters}>
-        <span className={styles.filterLabel}>Filters:</span>
-        
-        <select
-          className={styles.filterSelect}
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as taskService.StatusType | "")}
-        >
-          <option value="">All statuses</option>
-          <option value="todo">To Do</option>
-          <option value="doing">In Progress</option>
-          <option value="done">Completed</option>
-        </select>
-
-        <select
-          className={styles.filterSelect}
-          value={priorityFilter}
-          onChange={(e) => setPriorityFilter(e.target.value as taskService.PriorityType | "")}
-        >
-          <option value="">All priorities</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
-      </div>
-
-      <div className={styles.pageContent}>
-        {loading && <p className={styles.loadingState}>Loading tasks...</p>}
-        {!loading && tasks.length === 0 && (
-          <div className={styles.emptyState}>
-            <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-            <p>No tasks</p>
-            <small>Tasks are created within each project</small>
-          </div>
-        )}
-        {!loading && tasks.length > 0 && (
-          <TableUniversal<taskService.TaskItem>
-            columns={columns}
-            data={tasks}
-            loading={loading}
-            rowKey={(t) => t.id}
-            onRowClick={(t) => {
-              setSelectedId(t.id);
-              setOpen(true);
-            }}
-            actions={(t) => (
-              <button
-                className={styles.btn}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedId(t.id);
-                  setOpen(true);
-                }}
+      <Paper sx={{ mb: 3, p: 2 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              placeholder="Search tasks..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                label="Status"
+                onChange={(e) => setStatusFilter(e.target.value as taskService.StatusType | "")}
               >
-                Ver detalles
-              </button>
-            )}
-          />
-        )}
-      </div>
+                <MenuItem value="">All statuses</MenuItem>
+                <MenuItem value="todo">📋 To Do</MenuItem>
+                <MenuItem value="doing">⚙️ In Progress</MenuItem>
+                <MenuItem value="done">✅ Completed</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>Priority</InputLabel>
+              <Select
+                value={priorityFilter}
+                label="Priority"
+                onChange={(e) => setPriorityFilter(e.target.value as taskService.PriorityType | "")}
+              >
+                <MenuItem value="">All priorities</MenuItem>
+                <MenuItem value="low">🟢 Low</MenuItem>
+                <MenuItem value="medium">🟡 Medium</MenuItem>
+                <MenuItem value="high">🔴 High</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      </Paper>
 
-      {/* TaskDetail modal: solo renderizar si hay un id seleccionado */}
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress />
+        </Box>
+      ) : tasks.length === 0 ? (
+        <Paper sx={{ p: 8, textAlign: "center" }}>
+          <AssignmentIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            No tasks
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Tasks are created within each project
+          </Typography>
+        </Paper>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: "grey.50" }}>
+                <TableCell sx={{ fontWeight: 600 }}>Task</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Priority</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>Due Date</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {tasks.map((task) => {
+                const dueDate = task.due_date ? new Date(task.due_date) : null;
+                const now = new Date();
+                const isOverdue = dueDate && dueDate < now;
+                const dueDateFormatted = dueDate
+                  ? dueDate.toLocaleDateString("es-ES", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "-";
+
+                const statusLabel = task.status === "todo" ? "To Do" : task.status === "doing" ? "In Progress" : "Completed";
+                const priorityLabel = task.priority === "low" ? "Low" : task.priority === "medium" ? "Medium" : "High";
+
+                return (
+                  <TableRow
+                    key={task.id}
+                    hover
+                    onClick={() => {
+                      setSelectedId(task.id);
+                      setOpen(true);
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                      },
+                    }}
+                  >
+                    <TableCell>
+                      <Box>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {task.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {task.description || "Sin descripción"}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={statusLabel} color={getStatusColor(task.status)} size="small" />
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={priorityLabel} color={getPriorityColor(task.priority)} size="small" />
+                    </TableCell>
+                    <TableCell>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: isOverdue ? "error.main" : "text.primary",
+                          fontWeight: isOverdue ? 600 : 400,
+                        }}
+                      >
+                        {dueDateFormatted} {isOverdue && "⚠️"}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
       {selectedId !== null && (
         <TaskDetail
           taskId={selectedId}
@@ -190,6 +262,6 @@ export default function TaskList() {
           onUpdate={() => setReloadKey((k) => k + 1)}
         />
       )}
-    </div>
+    </Container>
   );
 }

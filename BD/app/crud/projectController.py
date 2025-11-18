@@ -19,11 +19,9 @@ class ProjectCRUD:
         db.refresh(project)
         return project
 
-    def get_all(self, db: Session, *, owner_id: int, skip: int = 0, limit: int = 100, search: str = None) -> List[Project]:
-        """Get all projects for the user with pagination and search"""
-        query = db.query(Project).filter(
-            and_(Project.owner_id == owner_id, Project.archived == False)
-        )
+    def get_all(self, db: Session, *, skip: int = 0, limit: int = 100, search: str = None) -> List[Project]:
+        """Get all projects (visible to all users) with pagination and search"""
+        query = db.query(Project).filter(Project.archived == False)
         
         # Search by name
         if search:
@@ -31,17 +29,13 @@ class ProjectCRUD:
         
         return query.offset(skip).limit(limit).all()
 
-    def get_by_id(self, db: Session, *, project_id: int, owner_id: int) -> Optional[Project]:
-        """Get project by ID (only for the owner)"""
-        return db.query(Project).filter(
-            and_(Project.id == project_id, Project.owner_id == owner_id)
-        ).first()
+    def get_by_id(self, db: Session, *, project_id: int) -> Optional[Project]:
+        """Get project by ID (accessible to all users)"""
+        return db.query(Project).filter(Project.id == project_id).first()
 
-    def update(self, db: Session, *, project_id: int, obj_in: ProjectUpdate, owner_id: int) -> Optional[Project]:
-        """Update project"""
-        project = db.query(Project).filter(
-            and_(Project.id == project_id, Project.owner_id == owner_id)
-        ).first()
+    def update(self, db: Session, *, project_id: int, obj_in: ProjectUpdate) -> Optional[Project]:
+        """Update project (any user can modify)"""
+        project = db.query(Project).filter(Project.id == project_id).first()
         
         if project:
             update_data = obj_in.dict(exclude_unset=True)  # Only fields that were sent
@@ -53,11 +47,9 @@ class ProjectCRUD:
             return project
         return None
 
-    def archive(self, db: Session, *, project_id: int, owner_id: int) -> bool:
-        """Archive project (soft delete)"""
-        project = db.query(Project).filter(
-            and_(Project.id == project_id, Project.owner_id == owner_id)
-        ).first()
+    def archive(self, db: Session, *, project_id: int) -> bool:
+        """Archive project (any user can archive)"""
+        project = db.query(Project).filter(Project.id == project_id).first()
         
         if project:
             project.archived = True
@@ -65,11 +57,9 @@ class ProjectCRUD:
             return True
         return False
 
-    def delete(self, db: Session, *, project_id: int, owner_id: int) -> bool:
-        """Delete project permanently (only the owner)"""
-        project = db.query(Project).filter(
-            and_(Project.id == project_id, Project.owner_id == owner_id)
-        ).first()
+    def delete(self, db: Session, *, project_id: int) -> bool:
+        """Delete project permanently (any user can delete)"""
+        project = db.query(Project).filter(Project.id == project_id).first()
         
         if project:
             db.delete(project)
@@ -77,11 +67,9 @@ class ProjectCRUD:
             return True
         return False
 
-    def count_total(self, db: Session, *, owner_id: int, search: str = None) -> int:
-        """Count total projects for pagination"""
-        query = db.query(Project).filter(
-            and_(Project.owner_id == owner_id, Project.archived == False)
-        )
+    def count_total(self, db: Session, *, search: str = None) -> int:
+        """Count total projects for pagination (all projects)"""
+        query = db.query(Project).filter(Project.archived == False)
         
         if search:
             query = query.filter(Project.name.ilike(f"%{search}%"))

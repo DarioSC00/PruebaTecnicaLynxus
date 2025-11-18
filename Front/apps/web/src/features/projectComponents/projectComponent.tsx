@@ -1,14 +1,43 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import styles from "./projectPage.module.css";
 import * as projectService from "./projectService/projectService";
-import TaskDetail from "../taskComponents/taskDetail"; // ajustar si la ruta difiere
+import TaskDetail from "../taskComponents/taskDetail";
 import ProjectDetail from "./detailProject";
 import TaskCreate from "../taskComponents/taskCreateComponent";
 import ProjectCreateComponent from "./projectCreateComponent";
 import AddMembersModal from "./addMembersModal";
 import PaginationUniversal from "../universalComponents/paginationUniversalComponents/paginationUniversal";
+import {
+  Box,
+  Container,
+  Typography,
+  TextField,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  IconButton,
+  CircularProgress,
+  InputAdornment,
+  Breadcrumbs,
+  Link,
+  Collapse,
+  List,
+  ListItem,
+  ListItemText,
+  Tooltip,
+} from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import AddTaskIcon from "@mui/icons-material/AddTask";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import FolderIcon from "@mui/icons-material/Folder";
 
 // Tipos concretos para evitar `any`
 type Task = {
@@ -45,7 +74,7 @@ export default function ProjectList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const pageSize = 10;
+  const pageSize = 5;
 
   // states for project modals / create task
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
@@ -55,14 +84,14 @@ export default function ProjectList() {
   const reloadTasksFor = async (projectId?: number) => {
     if (!projectId) return;
     try {
-      setTasksLoading((s) => ({ ...s, [projectId]: true }));
+      setTasksLoading((s: Record<number, boolean>) => ({ ...s, [projectId]: true }));
       const res = await projectService.getProject(projectId);
       const tasks: Task[] = (res?.tasks ?? []) as Task[];
-      setTasksByProject((s) => ({ ...s, [projectId]: tasks }));
+      setTasksByProject((s: Record<number, Task[]>) => ({ ...s, [projectId]: tasks }));
     } catch (err) {
       console.error("Error reloading project tasks:", err);
     } finally {
-      setTasksLoading((s) => ({ ...s, [projectId]: false }));
+      setTasksLoading((s: Record<number, boolean>) => ({ ...s, [projectId]: false }));
     }
   };
 
@@ -96,19 +125,19 @@ export default function ProjectList() {
 
   const toggleExpand = async (projectId: number) => {
     const isOpen = !!expanded[projectId];
-    setExpanded((s) => ({ ...s, [projectId]: !isOpen }));
+    setExpanded((s: Record<number, boolean>) => ({ ...s, [projectId]: !isOpen }));
 
     if (!isOpen && !tasksByProject[projectId]) {
       try {
-        setTasksLoading((s) => ({ ...s, [projectId]: true }));
+        setTasksLoading((s: Record<number, boolean>) => ({ ...s, [projectId]: true }));
         const res = await projectService.getProject(projectId);
         const tasks: Task[] = (res?.tasks ?? []) as Task[];
-        setTasksByProject((s) => ({ ...s, [projectId]: tasks }));
+        setTasksByProject((s: Record<number, Task[]>) => ({ ...s, [projectId]: tasks }));
       } catch (err) {
         console.error("Error loading project tasks:", err);
-        setTasksByProject((s) => ({ ...s, [projectId]: [] }));
+        setTasksByProject((s: Record<number, Task[]>) => ({ ...s, [projectId]: [] }));
       } finally {
-        setTasksLoading((s) => ({ ...s, [projectId]: false }));
+        setTasksLoading((s: Record<number, boolean>) => ({ ...s, [projectId]: false }));
       }
     }
   };
@@ -128,150 +157,299 @@ export default function ProjectList() {
   // castea el componente para evitar el error de IntrinsicAttributes
   const TaskCreateModal = TaskCreate as unknown as React.ComponentType<TaskCreateProps>;
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "todo":
+        return "default";
+      case "doing":
+        return "info";
+      case "done":
+        return "success";
+      default:
+        return "default";
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "low":
+        return "success";
+      case "medium":
+        return "warning";
+      case "high":
+        return "error";
+      default:
+        return "default";
+    }
+  };
+
   return (
-    <div className={styles.pageContainer}>
-      <div className={styles.headerRow}>
-        <div>
-          <h2>Projects</h2>
-          <div className={styles.subtitle}>
-            {loading ? "Loading..." : `${totalItems} project${totalItems !== 1 ? 's' : ''}`}
-          </div>
-        </div>
-        <div className={styles.headerActions}>
-          <input
-            className={styles.searchInput}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search projects..."
-          />
-          <ProjectCreateComponent onCreated={() => {
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Breadcrumbs sx={{ mb: 3 }}>
+        <Link underline="hover" color="inherit" href="#">
+          Home
+        </Link>
+        <Typography color="text.primary">Projects</Typography>
+      </Breadcrumbs>
+
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 4 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+            Projects
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {loading ? "Loading..." : `${totalItems} project${totalItems !== 1 ? "s" : ""}`}
+          </Typography>
+        </Box>
+        <ProjectCreateComponent
+          onCreated={() => {
             setSearchQuery("");
             setCurrentPage(1);
             window.location.reload();
-          }} />
-        </div>
-      </div>
+          }}
+        />
+      </Box>
+
+      <Paper sx={{ mb: 3, p: 2 }}>
+        <TextField
+          fullWidth
+          placeholder="Search projects..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Paper>
 
       {loading ? (
-        <div className={styles.loadingState}>Loading projects…</div>
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress />
+        </Box>
+      ) : projects.length === 0 ? (
+        <Paper sx={{ p: 8, textAlign: "center" }}>
+          <FolderIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+          <Typography variant="h6" sx={{ mb: 1 }}>
+            No projects
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Create your first project to get started
+          </Typography>
+        </Paper>
       ) : (
-        <div className={styles.tableCard}>
-          <div className={styles.tableHeader}>
-            <div>Project</div>
-            <div>Status</div>
-            <div>Created</div>
-            <div>Actions</div>
-          </div>
+        <>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "grey.50" }}>
+                  <TableCell sx={{ width: 50 }} />
+                  <TableCell sx={{ fontWeight: 600 }}>Project</TableCell>
+                  <TableCell sx={{ fontWeight: 600, width: 120 }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 600, width: 180 }}>Created</TableCell>
+                  <TableCell sx={{ fontWeight: 600, width: 120, textAlign: "center" }}>
+                    Actions
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {projects.map((project: ProjectItem) => {
+                  const isExpanded = !!expanded[project.id];
+                  const projectTasks = tasksByProject[project.id] || [];
+                  const isLoadingTasks = tasksLoading[project.id];
 
-          <div>
-            {projects.map((p) => (
-              <div key={p.id} className={styles.tableRow}>
-                <div className={styles.rowContent}>
-                  <div className={styles.projectInfo}>
-                    <button
-                      className={styles.expandBtn}
-                      onClick={() => toggleExpand(p.id)}
-                      aria-expanded={!!expanded[p.id]}
-                      aria-controls={`project-tasks-${p.id}`}
-                    >
-                      {expanded[p.id] ? "▾" : "▸"}
-                    </button>
-                    <div>
-                      {/* ahora el nombre es un botón que abre el detail del proyecto */}
-                      <button
-                        className={styles.projectTitleBtn}
-                        onClick={() => {
-                          setSelectedProjectId(p.id);
-                          setProjectDetailOpen(true);
-                        }}
-                        aria-label={`Abrir detalle del proyecto ${p.name}`}
-                      >
-                        <div className={styles.projectTitle}>{p.name}</div>
-                        <div className={styles.projectDesc}>{p.description}</div>
-                      </button>
-                    </div>
-                  </div>
+                  return (
+                    <React.Fragment key={project.id}>
+                      <TableRow hover>
+                        <TableCell>
+                          <IconButton
+                            size="small"
+                            onClick={() => toggleExpand(project.id)}
+                            aria-label={isExpanded ? "Collapse" : "Expand"}
+                          >
+                            {isExpanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                          </IconButton>
+                        </TableCell>
+                        <TableCell>
+                          <Box
+                            onClick={() => {
+                              setSelectedProjectId(project.id);
+                              setProjectDetailOpen(true);
+                            }}
+                            sx={{
+                              cursor: "pointer",
+                              "&:hover": {
+                                color: "primary.main",
+                              },
+                            }}
+                          >
+                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                              {project.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {project.description}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={project.archived ? "Archived" : "Active"}
+                            color={project.archived ? "default" : "success"}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {project.created_at
+                              ? new Date(project.created_at).toLocaleString()
+                              : "-"}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                            <Tooltip title="Add task">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTaskCreateOpenFor(project.id);
+                                }}
+                                sx={{
+                                  color: "primary.main",
+                                  "&:hover": {
+                                    bgcolor: "primary.light",
+                                    color: "primary.dark",
+                                  },
+                                }}
+                              >
+                                <AddTaskIcon />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Add members">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAddMembersOpenFor(project.id);
+                                }}
+                                sx={{
+                                  color: "secondary.main",
+                                  "&:hover": {
+                                    bgcolor: "secondary.light",
+                                    color: "secondary.dark",
+                                  },
+                                }}
+                              >
+                                <GroupAddIcon />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
 
-                  <div className={styles.center}>{p.archived ? "Archived" : "Active"}</div>
-                  <div className={styles.center}>
-                    {p.created_at ? new Date(p.created_at).toLocaleString() : "-"}
-                  </div>
-                  <div className={`${styles.center} ${styles.actionsCell}`}>
-                    <div className={styles.actionsRow}>
-                      <button
-                        title="Add task"
-                        className={styles.iconBtn}
-                        onClick={(e) => { e.stopPropagation(); setTaskCreateOpenFor(p.id); }}
-                        aria-label={`Create task in project ${p.name}`}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 5v14"></path>
-                          <path d="M5 12h14"></path>
-                        </svg>
-                      </button>
+                      <TableRow>
+                        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
+                          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                            <Box sx={{ py: 2, px: 3, bgcolor: "grey.50" }}>
+                              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                Tasks
+                              </Typography>
+                              {isLoadingTasks ? (
+                                <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+                                  <CircularProgress size={24} />
+                                </Box>
+                              ) : projectTasks.length === 0 ? (
+                                <Typography variant="body2" color="text.secondary">
+                                  No tasks in this project
+                                </Typography>
+                              ) : (
+                                <List dense>
+                                  {projectTasks.map((task: Task) => (
+                                    <ListItem
+                                      key={task.id}
+                                      sx={{
+                                        bgcolor: "white",
+                                        mb: 1,
+                                        borderRadius: 1,
+                                        border: "1px solid",
+                                        borderColor: "divider",
+                                        cursor: "pointer",
+                                        "&:hover": {
+                                          bgcolor: "action.hover",
+                                        },
+                                      }}
+                                      onClick={() => openTask(task.id)}
+                                    >
+                                      <ListItemText
+                                        primary={
+                                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                            <Typography variant="body1">{task.title}</Typography>
+                                            <Chip
+                                              label={
+                                                task.status === "todo"
+                                                  ? "To Do"
+                                                  : task.status === "doing"
+                                                  ? "In Progress"
+                                                  : "Completed"
+                                              }
+                                              color={getStatusColor(task.status)}
+                                              size="small"
+                                            />
+                                            <Chip
+                                              label={
+                                                task.priority === "low"
+                                                  ? "Low"
+                                                  : task.priority === "medium"
+                                                  ? "Medium"
+                                                  : "High"
+                                              }
+                                              color={getPriorityColor(task.priority)}
+                                              size="small"
+                                            />
+                                          </Box>
+                                        }
+                                        secondary={
+                                          <Typography variant="body2" color="text.secondary">
+                                            Due:{" "}
+                                            {task.due_date
+                                              ? new Date(task.due_date).toLocaleDateString()
+                                              : "-"}
+                                          </Typography>
+                                        }
+                                      />
+                                    </ListItem>
+                                  ))}
+                                </List>
+                              )}
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    </React.Fragment>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-                      <button
-                        title="Add members"
-                        className={styles.iconBtn}
-                        onClick={(e) => { e.stopPropagation(); setAddMembersOpenFor(p.id); }}
-                        aria-label={`Add members to ${p.name}`}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                          <circle cx="9" cy="7" r="4"></circle>
-                          <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* tasks panel */}
-                {expanded[p.id] && (
-                  <div id={`project-tasks-${p.id}`} className={styles.tasksPanel}>
-                    {tasksLoading[p.id] ? (
-                      <div>Loading tasks…</div>
-                    ) : (tasksByProject[p.id] || []).length === 0 ? (
-                      <div className={styles.emptyState}>No tasks</div>
-                    ) : (
-                      <ul className={styles.taskList}>
-                        {(tasksByProject[p.id] ?? []).map((t: Task) => (
-                          <li key={t.id} className={styles.taskItem}>
-                            <div>
-                              <button className={styles.taskLink} onClick={() => openTask(t.id)}>
-                                {t.title}
-                              </button>
-                              <div className={styles.metaSmall}>{t.status} — {t.priority}</div>
-                            </div>
-                            <div className={styles.taskRight}>
-                              <div className={styles.metaSmall}>{t.due_date ? new Date(t.due_date).toLocaleDateString() : "-"}</div>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
           {!loading && totalItems > 0 && (
-            <PaginationUniversal
-              currentPage={currentPage}
-              totalPages={Math.ceil(totalItems / pageSize)}
-              totalItems={totalItems}
-              pageSize={pageSize}
-              onPageChange={setCurrentPage}
-              disabled={loading}
-            />
+            <Box sx={{ mt: 3 }}>
+              <PaginationUniversal
+                currentPage={currentPage}
+                totalPages={Math.ceil(totalItems / pageSize)}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                disabled={loading}
+              />
+            </Box>
           )}
-        </div>
+        </>
       )}
 
-      {/* Project detail modal */}
       {selectedProjectId !== null && (
         <ProjectDetail
           projectId={selectedProjectId}
@@ -283,14 +461,12 @@ export default function ProjectList() {
         />
       )}
 
-      {/* Create task modal (por proyecto) */}
       {taskCreateOpenFor !== null && (
         <TaskCreateModal
           projectId={taskCreateOpenFor}
           open={true}
           onCreated={() => {
-            // expandir panel y recargar tareas del proyecto
-            setExpanded((s) => ({ ...s, [taskCreateOpenFor]: true }));
+            setExpanded((s: Record<number, boolean>) => ({ ...s, [taskCreateOpenFor]: true }));
             reloadTasksFor(taskCreateOpenFor);
             setTaskCreateOpenFor(null);
           }}
@@ -298,19 +474,15 @@ export default function ProjectList() {
         />
       )}
 
-      {/* Add Members modal */}
       {addMembersOpenFor !== null && (
         <AddMembersModal
           projectId={addMembersOpenFor}
           open={true}
           onClose={() => setAddMembersOpenFor(null)}
-          onMemberAdded={() => {
-            // Opcional: recargar proyecto si necesitas actualizar la lista
-          }}
+          onMemberAdded={() => {}}
         />
       )}
 
-      {/* TaskDetail modal */}
       {selectedTaskId !== null && (
         <TaskDetail
           taskId={selectedTaskId}
@@ -321,6 +493,6 @@ export default function ProjectList() {
           }}
         />
       )}
-    </div>
+    </Container>
   );
 }

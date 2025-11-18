@@ -1,8 +1,24 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import styles from "./navbarComponent.module.css";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  IconButton,
+  Avatar,
+  Menu,
+  MenuItem,
+  Divider,
+  ListItemIcon,
+  Breadcrumbs,
+  Link,
+} from "@mui/material";
+import PersonIcon from "@mui/icons-material/Person";
+import SettingsIcon from "@mui/icons-material/Settings";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 const routeNames: Record<string, string> = {
   "/": "Home",
@@ -11,131 +27,170 @@ const routeNames: Record<string, string> = {
   // agregar más rutas si hace falta
 };
 
-export default function NavbarComponent(): React.ReactElement {
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const notifRef = useRef<HTMLDivElement>(null);
+export default function NavbarComponent() {
   const router = useRouter();
   const pathname = usePathname() || "/";
   const parts = pathname.split("/").filter(Boolean);
   const pageKey = parts.length ? `/${parts[0]}` : "/";
   const pageTitle = routeNames[pageKey] ?? (parts.length ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : "Home");
 
-  // Cerrar menus al hacer click fuera
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false);
-      }
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
   const handleLogout = () => {
-    // Clear auth-related localStorage entries and redirect to login
+    handleClose();
     try {
       localStorage.removeItem("access_token");
       localStorage.removeItem("user");
       localStorage.removeItem("refresh_token");
     } catch (e) {
-      console.error('logout: storage clear failed', e);
+      console.error("logout: storage clear failed", e);
     }
-    // replace so back button won't return to protected pages
     router.replace("/login");
   };
 
+  const [userName, setUserName] = useState("User");
+  const [userEmail, setUserEmail] = useState("");
+  const [userInitials, setUserInitials] = useState("U");
 
-  const userName = "Ruben Salazar";
-  const userEmail = "ruben@lynxus.com";
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setUserName(user.name || user.email || "User");
+        setUserEmail(user.email || "");
+        const nameParts = (user.name || user.email || "User").split(" ");
+        const initials =
+          nameParts.length > 1
+            ? nameParts[0][0] + nameParts[1][0]
+            : nameParts[0].substring(0, 2);
+        setUserInitials(initials.toUpperCase());
+      }
+    } catch (e) {
+      console.error("Error loading user data", e);
+    }
+  }, []);
 
   return (
-    <nav className={styles.navbar}>
-      <div className={styles.navbarContent}>
-        {/* Sección izquierda - Título/Breadcrumb */}
-        <div className={styles.navbarLeft}>
-          <h1 className={styles.pageTitle}>{pageTitle}</h1>
-          <div className={styles.breadcrumb}>
-            <span>Home</span>
-            <span className={styles.separator}>/</span>
-            <span className={styles.breadcrumbActive}>{pageTitle}</span>
-          </div>
-        </div>
+    <AppBar
+      position="sticky"
+      elevation={0}
+      sx={{
+        bgcolor: "white",
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        color: "text.primary",
+      }}
+    >
+      <Toolbar sx={{ justifyContent: "space-between" }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
+            {pageTitle}
+          </Typography>
+          <Breadcrumbs separator="/" sx={{ fontSize: "0.875rem" }}>
+            <Link underline="hover" color="text.secondary" href="#">
+              Home
+            </Link>
+            <Typography color="text.primary" sx={{ fontSize: "0.875rem" }}>
+              {pageTitle}
+            </Typography>
+          </Breadcrumbs>
+        </Box>
 
-        {/* Sección derecha - Acciones */}
-        <div className={styles.navbarRight}>
-        
-        
-
-        
-          {/* Perfil de usuario */}
-          <div className={styles.userWrapper} ref={menuRef}>
-            <button
-              className={styles.userButton}
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              aria-label="User menu"
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <IconButton
+            onClick={handleClick}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              px: 2,
+              py: 1,
+              borderRadius: 2,
+              "&:hover": {
+                bgcolor: "action.hover",
+              },
+            }}
+          >
+            <Avatar
+              sx={{
+                width: 36,
+                height: 36,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                fontSize: "0.875rem",
+              }}
             >
-              <div className={styles.avatar}>
-                <span>RS</span>
-              </div>
-              <div className={styles.userInfo}>
-                <div className={styles.userName}>{userName}</div>
-                <div className={styles.userRole}>Admin</div>
-              </div>
-              <svg className={styles.chevron} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
+              {userInitials}
+            </Avatar>
+            <Box sx={{ textAlign: "left", display: { xs: "none", sm: "block" } }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                {userName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                Admin
+              </Typography>
+            </Box>
+          </IconButton>
 
-            {showUserMenu && (
-              <div className={styles.userDropdown}>
-                <div className={styles.userDropdownHeader}>
-                  <div className={styles.userDropdownAvatar}>RS</div>
-                  <div>
-                    <div className={styles.userDropdownName}>{userName}</div>
-                    <div className={styles.userDropdownEmail}>{userEmail}</div>
-                  </div>
-                </div>
-                <ul className={styles.userMenu}>
-                  <li>
-                    <button className={styles.userMenuItem} onClick={() => router.push("/profile")}>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                      My Profile
-                    </button>
-                  </li>
-                  <li>
-                    <button className={styles.userMenuItem} onClick={() => router.push("/settings")}>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24" />
-                      </svg>
-                      Settings
-                    </button>
-                  </li>
-                  <li className={styles.divider}></li>
-                  <li>
-                    <button className={`${styles.userMenuItem} ${styles.logout}`} onClick={handleLogout}>
-                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                      </svg>
-                      Sign Out
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </nav>
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleClose}
+            onClick={handleClose}
+            PaperProps={{
+              elevation: 8,
+              sx: {
+                minWidth: 220,
+                mt: 1.5,
+                borderRadius: 2,
+              },
+            }}
+            transformOrigin={{ horizontal: "right", vertical: "top" }}
+            anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+          >
+            <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {userName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {userEmail}
+              </Typography>
+            </Box>
+
+            <MenuItem onClick={() => router.push("/profile")}>
+              <ListItemIcon>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
+              My Profile
+            </MenuItem>
+
+            <MenuItem onClick={() => router.push("/settings")}>
+              <ListItemIcon>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              Settings
+            </MenuItem>
+
+            <Divider />
+
+            <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
+              <ListItemIcon>
+                <LogoutIcon fontSize="small" sx={{ color: "error.main" }} />
+              </ListItemIcon>
+              Sign Out
+            </MenuItem>
+          </Menu>
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 }

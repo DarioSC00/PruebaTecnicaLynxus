@@ -1,16 +1,54 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import DetalModal from "../universalComponents/detailUniversalComponents/detailModal";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Box,
+  Typography,
+  Chip,
+  Paper,
+  Tabs,
+  Tab,
+  CircularProgress,
+  IconButton,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import PersonIcon from "@mui/icons-material/Person";
+import EmailIcon from "@mui/icons-material/Email";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import FolderIcon from "@mui/icons-material/Folder";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import PaginationUniversal from "../universalComponents/paginationUniversalComponents/paginationUniversal";
 import * as userService from "./userService/userService";
-import styles from "./userPage.module.css";
 
 type UserDetailType = userService.UserDetail;
 type ProjectItem = { id: number; name: string; description?: string };
 
-// Helper seguro para obtener clases desde CSS modules
-function getStyle(stylesObj: Record<string,string>, key: string) {
-  return (stylesObj as Record<string,string>)[key] ?? "";
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`user-tabpanel-${index}`}
+      aria-labelledby={`user-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
 }
 
 export default function UserDetail({ 
@@ -25,6 +63,12 @@ export default function UserDetail({
   const [data, setData] = useState<UserDetailType | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState(0);
+  
+  // Pagination state
+  const [projectsPage, setProjectsPage] = useState(1);
+  const [tasksPage, setTasksPage] = useState(1);
+  const pageSize = 5;
 
   useEffect(() => {
     let mounted = true;
@@ -32,7 +76,9 @@ export default function UserDetail({
       if (mounted) { 
         setData(null); 
         setError(null); 
-        setLoading(false); 
+        setLoading(false);
+        setProjectsPage(1);
+        setTasksPage(1);
       }
       return;
     }
@@ -58,109 +104,304 @@ export default function UserDetail({
     return () => { mounted = false; };
   }, [open, userId]);
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "done": return { bgcolor: '#d1fae5', color: '#065f46' };
+      case "doing": return { bgcolor: '#dbeafe', color: '#1e40af' };
+      default: return { bgcolor: '#f3f4f6', color: '#374151' };
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high": return { bgcolor: '#fee2e2', color: '#991b1b' };
+      case "medium": 
+      case "med": return { bgcolor: '#fef3c7', color: '#92400e' };
+      default: return { bgcolor: '#f0fdf4', color: '#166534' };
+    }
+  };
+
   return (
-    <DetalModal 
+    <Dialog 
       open={open} 
-      onClose={onClose} 
-      title="User Information"
-      data={data}
-      render={(user) => {
-        if (loading) return <p className={styles.loadingText}>Loading information...</p>;
-        if (error) return <p className={styles.errorText}>{error}</p>;
-        if (!user) return <p className={styles.emptyText}>No data available</p>;
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          maxHeight: '90vh',
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        fontSize: '1.5rem',
+        fontWeight: 700,
+        py: 3,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PersonIcon />
+          <span>User Information</span>
+        </Box>
+        <IconButton onClick={onClose} sx={{ color: 'white' }}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      
+      <DialogContent sx={{ p: 0 }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 8 }}>
+            <CircularProgress />
+            <Typography sx={{ mt: 2, color: '#64748b' }}>Loading information...</Typography>
+          </Box>
+        ) : error ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography color="error">{error}</Typography>
+          </Box>
+        ) : !data ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography color="textSecondary">No data available</Typography>
+          </Box>
+        ) : (
+          <Box>
+            {/* User Basic Information */}
+            <Box sx={{ p: 4, bgcolor: '#f9fafb' }}>
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 700, color: '#374151' }}>
+                User Details
+              </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+                <Paper elevation={0} sx={{ p: 2.5, bgcolor: 'white', borderRadius: 2, border: '1px solid #e5e7eb' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <PersonIcon sx={{ fontSize: 20, color: '#667eea' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#667eea', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Full Name
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontWeight: 600, color: '#1f2937', fontSize: '1.05rem' }}>
+                    {data.name ?? "No name"}
+                  </Typography>
+                </Paper>
 
-        return (
-          <div className={styles.detailContent}>
-            {/* User basic information */}
-            <div className={styles.detailSection}>
-              <h3 className={styles.sectionTitle}>User Data</h3>
-              
-              <div className={styles.detailGrid}>
-                <div className={styles.detailField}>
-                  <label className={styles.fieldLabel}>Full name</label>
-                  <p className={styles.fieldValue}>{user.name ?? "No name"}</p>
-                </div>
+                <Paper elevation={0} sx={{ p: 2.5, bgcolor: 'white', borderRadius: 2, border: '1px solid #e5e7eb' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <EmailIcon sx={{ fontSize: 20, color: '#667eea' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#667eea', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Email Address
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontWeight: 600, color: '#1f2937', fontSize: '1.05rem' }}>
+                    {data.email ?? "-"}
+                  </Typography>
+                </Paper>
 
-                <div className={styles.detailField}>
-                  <label className={styles.fieldLabel}>Email address</label>
-                  <p className={styles.fieldValue}>{user.email ?? "-"}</p>
-                </div>
-
-                <div className={styles.detailField}>
-                  <label className={styles.fieldLabel}>Registration date</label>
-                  <p className={styles.fieldValue}>
-                    {user.created_at 
-                      ? new Date(user.created_at).toLocaleDateString('en-US', {
+                <Paper elevation={0} sx={{ p: 2.5, bgcolor: 'white', borderRadius: 2, border: '1px solid #e5e7eb' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <CalendarTodayIcon sx={{ fontSize: 20, color: '#667eea' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#667eea', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Registration Date
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontWeight: 600, color: '#1f2937', fontSize: '0.95rem' }}>
+                    {data.created_at 
+                      ? new Date(data.created_at).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
                         })
                       : "Not available"
                     }
-                  </p>
-                </div>
-              </div>
-            </div>
+                  </Typography>
+                </Paper>
 
-            {/* User projects (if backend returns them) */}
-            {user.projects && user.projects.length > 0 && (
-              <div className={styles.detailSection}>
-                <h3 className={styles.sectionTitle}>Projects ({user.projects.length})</h3>
-                <ul className={styles.projectList}>
-                  {user.projects.map((project: ProjectItem) => (
-                    <li key={project.id} className={styles.projectItem}>
-                      <div className={styles.projectName}>{project.name}</div>
-                      {project.description && (
-                        <div className={styles.projectDesc}>{project.description}</div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+                <Paper elevation={0} sx={{ p: 2.5, bgcolor: 'white', borderRadius: 2, border: '1px solid #e5e7eb' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#667eea', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      Status
+                    </Typography>
+                  </Box>
+                  <Chip 
+                    label={data.is_active ? "Active" : "Inactive"} 
+                    sx={{ 
+                      bgcolor: data.is_active ? '#d1fae5' : '#fee2e2',
+                      color: data.is_active ? '#065f46' : '#991b1b',
+                      fontWeight: 700,
+                    }}
+                  />
+                </Paper>
+              </Box>
+            </Box>
 
-            {/* Assigned tasks (if backend returns them) */}
-            {user.tasks && user.tasks.length > 0 && (
-              <div className={styles.detailSection}>
-                <h3 className={styles.sectionTitle}>Assigned Tasks ({user.tasks.length})</h3>
-                <ul className={styles.taskList}>
-                  {user.tasks.map((task) => {
-                    const statusKey = `status-${task.status}`;
-                    const priorityKey = `priority-${task.priority}`;
-                    return (
-                      <li key={task.id} className={styles.taskItem}>
-                        <div className={styles.taskTitle}>{task.title}</div>
-                        <div className={styles.taskMeta}>
-                          <span className={`${styles.taskStatus} ${getStyle(styles, statusKey)}`}>
-                            {task.status === 'todo' && 'To Do'}
-                            {task.status === 'doing' && 'In Progress'}
-                            {task.status === 'done' && 'Completed'}
-                          </span>
-                          <span className={`${styles.taskPriority} ${getStyle(styles, priorityKey)}`}>
-                            {task.priority === 'low' && 'Low'}
-                            {task.priority === 'med' && 'Medium'}
-                            {task.priority === 'high' && 'High'}
-                          </span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
+            <Divider />
 
-            {/* Message if user has no projects or tasks */}
-            {(!user.projects || user.projects.length === 0) && 
-             (!user.tasks || user.tasks.length === 0) && (
-              <div className={styles.emptySection}>
-                <p>This user does not have any projects or assigned tasks yet.</p>
-              </div>
-            )}
-          </div>
-        );
-      }}
-    />
+            {/* Tabs */}
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'white' }}>
+              <Tabs 
+                value={activeTab} 
+                onChange={(_, newValue) => setActiveTab(newValue)}
+                sx={{
+                  px: 3,
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    minHeight: 64,
+                  }
+                }}
+              >
+                <Tab 
+                  icon={<FolderIcon />} 
+                  iconPosition="start" 
+                  label={`Projects (${data.projects?.length || 0})`}
+                />
+                <Tab 
+                  icon={<AssignmentIcon />} 
+                  iconPosition="start" 
+                  label={`Tasks (${data.tasks?.length || 0})`}
+                />
+              </Tabs>
+            </Box>
+
+            {/* Projects Tab */}
+            <TabPanel value={activeTab} index={0}>
+              <Box sx={{ px: 4 }}>
+                {data.projects && data.projects.length > 0 ? (
+                  <>
+                    <List sx={{ bgcolor: 'white' }}>
+                      {data.projects
+                        .slice((projectsPage - 1) * pageSize, projectsPage * pageSize)
+                        .map((project: ProjectItem) => (
+                          <ListItem 
+                            key={project.id}
+                            sx={{
+                              mb: 1,
+                              border: '1px solid #e5e7eb',
+                              borderRadius: 2,
+                              '&:hover': {
+                                bgcolor: '#f9fafb',
+                              }
+                            }}
+                          >
+                            <ListItemText
+                              primary={
+                                <Typography sx={{ fontWeight: 600, color: '#1f2937', fontSize: '1rem' }}>
+                                  {project.name}
+                                </Typography>
+                              }
+                              secondary={
+                                project.description && (
+                                  <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5 }}>
+                                    {project.description}
+                                  </Typography>
+                                )
+                              }
+                            />
+                          </ListItem>
+                        ))
+                      }
+                    </List>
+                    {data.projects.length > pageSize && (
+                      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                        <PaginationUniversal
+                          currentPage={projectsPage}
+                          totalPages={Math.ceil(data.projects.length / pageSize)}
+                          totalItems={data.projects.length}
+                          pageSize={pageSize}
+                          onPageChange={setProjectsPage}
+                          disabled={false}
+                        />
+                      </Box>
+                    )}
+                  </>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 6 }}>
+                    <FolderIcon sx={{ fontSize: 48, color: '#cbd5e1', mb: 2 }} />
+                    <Typography sx={{ color: '#64748b', fontWeight: 600 }}>
+                      No projects assigned
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                      This user is not part of any project
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </TabPanel>
+
+            {/* Tasks Tab */}
+            <TabPanel value={activeTab} index={1}>
+              <Box sx={{ px: 4 }}>
+                {data.tasks && data.tasks.length > 0 ? (
+                  <>
+                    <List sx={{ bgcolor: 'white' }}>
+                      {data.tasks
+                        .slice((tasksPage - 1) * pageSize, tasksPage * pageSize)
+                        .map((task) => (
+                          <ListItem 
+                            key={task.id}
+                            sx={{
+                              mb: 1,
+                              border: '1px solid #e5e7eb',
+                              borderRadius: 2,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'flex-start',
+                              '&:hover': {
+                                bgcolor: '#f9fafb',
+                              }
+                            }}
+                          >
+                            <Typography sx={{ fontWeight: 600, color: '#1f2937', fontSize: '1rem', mb: 1 }}>
+                              {task.title}
+                            </Typography>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Chip 
+                                label={task.status === 'todo' ? 'To Do' : task.status === 'doing' ? 'In Progress' : 'Completed'}
+                                size="small"
+                                sx={{ ...getStatusColor(task.status), fontWeight: 600 }}
+                              />
+                              <Chip 
+                                label={task.priority === 'low' ? 'Low' : task.priority === 'med' || task.priority === 'medium' ? 'Medium' : 'High'}
+                                size="small"
+                                sx={{ ...getPriorityColor(task.priority), fontWeight: 600 }}
+                              />
+                            </Box>
+                          </ListItem>
+                        ))
+                      }
+                    </List>
+                    {data.tasks.length > pageSize && (
+                      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+                        <PaginationUniversal
+                          currentPage={tasksPage}
+                          totalPages={Math.ceil(data.tasks.length / pageSize)}
+                          totalItems={data.tasks.length}
+                          pageSize={pageSize}
+                          onPageChange={setTasksPage}
+                          disabled={false}
+                        />
+                      </Box>
+                    )}
+                  </>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 6 }}>
+                    <AssignmentIcon sx={{ fontSize: 48, color: '#cbd5e1', mb: 2 }} />
+                    <Typography sx={{ color: '#64748b', fontWeight: 600 }}>
+                      No tasks assigned
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                      This user has no tasks assigned
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </TabPanel>
+          </Box>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

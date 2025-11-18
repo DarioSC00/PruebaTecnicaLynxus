@@ -40,7 +40,7 @@ def create_project(
         )
 
 
-@router.get("/", response_model=List[ProjectResponse])
+@router.get("/")
 def get_projects(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=200),
@@ -48,15 +48,27 @@ def get_projects(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Get list of projects for the current user"""
+    """Get list of ALL projects (collaborative workspace) with pagination"""
     projects = project_crud.get_all(
         db=db,
-        owner_id=current_user.id,
         skip=skip,
         limit=limit,
         search=search
     )
-    return projects
+    total = project_crud.count_total(
+        db=db,
+        search=search
+    )
+    
+    # Calculate page number
+    page = (skip // limit) + 1 if limit > 0 else 1
+    
+    return {
+        "items": projects,
+        "total": total,
+        "page": page,
+        "page_size": limit
+    }
 
 
 # Endpoint GET /{project_id} moved to line 136 (read_project)
@@ -69,12 +81,11 @@ def update_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Update project by ID"""
+    """Update project by ID (any user can modify)"""
     updated_project = project_crud.update(
         db=db,
         project_id=project_id,
-        obj_in=project_in,
-        owner_id=current_user.id
+        obj_in=project_in
     )
     if not updated_project:
         raise HTTPException(
@@ -90,11 +101,10 @@ def delete_project(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Delete project by ID"""
+    """Delete project by ID (any user can delete)"""
     success = project_crud.delete(
         db=db, 
-        project_id=project_id, 
-        owner_id=current_user.id
+        project_id=project_id
     )
     if not success:
         raise HTTPException(
@@ -109,8 +119,8 @@ def get_projects_by_user(
     user_id: int,
     db: Session = Depends(get_db)
 ):
-    """Get projects by user ID"""
-    projects = project_crud.get_all(db=db, owner_id=user_id)
+    """Get all projects (returns all since it's collaborative)"""
+    projects = project_crud.get_all(db=db)
     return projects
 
 

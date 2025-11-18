@@ -3,9 +3,22 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginWithEmail } from "./loginService/loginService";
-import styles from "./loginPage.module.css";
-import Link from "next/link";
 import { toast } from "react-toastify";
+import {
+  Box,
+  Container,
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Link as MuiLink,
+  CircularProgress,
+  Alert,
+  Grid,
+} from "@mui/material";
+import Link from "next/link";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import LoginIcon from "@mui/icons-material/Login";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,94 +59,193 @@ export default function LoginPage() {
   };
 
   return (
-    <main className={styles.page}>
-      <div className={styles.bgTexture} aria-hidden />
-      <div className={styles.container}>
-        <div className={styles.leftPanel}>
-          <div className={styles.brandWrapper}>
-            <svg className={styles.logo} viewBox="0 0 60 60" aria-hidden>
-              <defs>
-                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" className={styles.logoStop1} />
-                  <stop offset="100%" className={styles.logoStop2} />
-                </linearGradient>
-              </defs>
-              <rect width="60" height="60" rx="14" className={styles.logoRect} />
-              <path d="M18 38 L30 22 L42 38" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            </svg>
-            <div>
-              <h1 className={styles.appTitle}>Lynxus Task</h1>
-              <p className={styles.appSubtitle}>Manage projects and tasks effortlessly</p>
-            </div>
-          </div>
-          <div className={styles.illustration}>
-            <svg viewBox="0 0 400 300" className={styles.illustrationSvg} role="img" aria-hidden>
-              <rect x="50" y="80" width="140" height="160" rx="8" className={styles.illRect1} />
-              <rect x="210" y="50" width="140" height="190" rx="8" className={styles.illRect2} />
-              <circle cx="120" cy="140" r="18" className={styles.illCircle1} />
-              <circle cx="280" cy="120" r="18" className={styles.illCircle2} />
-            </svg>
-          </div>
-        </div>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        position: "relative",
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage:
+            "radial-gradient(circle at 20px 20px, rgba(255,255,255,0.05) 2px, transparent 0)",
+          backgroundSize: "40px 40px",
+        },
+      }}
+    >
+      <Container maxWidth="md" sx={{ position: "relative", zIndex: 1 }}>
+        <Grid container spacing={0}>
+          <Grid item xs={12} md={6}>
+            <Paper
+              elevation={24}
+              sx={{
+                p: 4,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                borderRadius: { xs: "16px 16px 0 0", md: "16px 0 0 16px" },
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <Box sx={{ textAlign: "center", mb: 4 }}>
+                <Box
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    margin: "0 auto 16px",
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    borderRadius: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <LockOutlinedIcon sx={{ fontSize: 40, color: "white" }} />
+                </Box>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    backgroundClip: "text",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    mb: 1,
+                  }}
+                >
+                  Lynxus Task
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Manage projects and tasks effortlessly
+                </Typography>
+              </Box>
 
-        <div className={styles.rightPanel}>
-          <div className={styles.formCard}>
-            <h2 className={styles.formTitle}>Welcome back</h2>
-            <p className={styles.formSubtitle}>Sign in to your account to continue</p>
+              <Box
+                sx={{
+                  mt: 4,
+                  p: 3,
+                  bgcolor: "rgba(102, 126, 234, 0.05)",
+                  borderRadius: 2,
+                  border: "1px solid rgba(102, 126, 234, 0.1)",
+                }}
+              >
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  Welcome back!
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Sign in to access your projects, manage tasks, and collaborate
+                  with your team.
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
 
-            {error && (
-              <div role="alert" className={styles.errorAlert}>
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style={{ flexShrink: 0 }}>
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
+          <Grid item xs={12} md={6}>
+            <Paper
+              elevation={24}
+              sx={{
+                p: 4,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                borderRadius: { xs: "0 0 16px 16px", md: "0 16px 16px 0" },
+              }}
+            >
+              <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
+                Sign In
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Enter your credentials to continue
+              </Typography>
 
-            <form onSubmit={handleLogin} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="email">Email address</label>
-                <input
-                  id="email"
-                  name="email"
-                  className={styles.input}
+              {error && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                  {error}
+                </Alert>
+              )}
+
+              <Box component="form" onSubmit={handleLogin}>
+                <TextField
+                  fullWidth
+                  label="Email address"
                   type="email"
-                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  sx={{ mb: 2 }}
+                  placeholder="you@example.com"
                 />
-              </div>
 
-              <div className={styles.formGroup}>
-                <label className={styles.label} htmlFor="password">Password</label>
-                <input
-                  id="password"
-                  name="password"
-                  className={styles.input}
+                <TextField
+                  fullWidth
+                  label="Password"
                   type="password"
-                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  sx={{ mb: 3 }}
+                  placeholder="••••••••"
                 />
-              </div>
 
-              <button type="submit" className={styles.submitButton} disabled={loading}>
-                {loading ? (
-                  <span className={styles.spinner}></span>
-                ) : (
-                  "Sign in"
-                )}
-              </button>
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <LoginIcon />}
+                  sx={{
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    color: "white",
+                    py: 1.5,
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    textTransform: "none",
+                    boxShadow: "0 4px 14px 0 rgba(102, 126, 234, 0.4)",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
+                      boxShadow: "0 6px 20px 0 rgba(102, 126, 234, 0.5)",
+                    },
+                  }}
+                >
+                  {loading ? "Signing in..." : "Sign in"}
+                </Button>
 
-              <div className={styles.signupPrompt}>
-                Don&apos;t have an account? <Link href="/register" className={styles.signupLink}>Sign up</Link>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </main>
+                <Box sx={{ mt: 3, textAlign: "center" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Don&apos;t have an account?{" "}
+                    <Link href="/register" passHref legacyBehavior>
+                      <MuiLink
+                        sx={{
+                          color: "primary.main",
+                          fontWeight: 600,
+                          textDecoration: "none",
+                          "&:hover": {
+                            textDecoration: "underline",
+                          },
+                        }}
+                      >
+                        Sign up
+                      </MuiLink>
+                    </Link>
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
   );
 }

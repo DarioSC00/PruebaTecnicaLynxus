@@ -56,6 +56,9 @@ def create_comment(
             detail="Task not found"
         )
 
+    # Ensure task_id is set from URL parameter
+    comment_in.task_id = task_id
+    
     # No permission validation - all users are equal
     comment = comment_crud.create(
         db=db,
@@ -107,7 +110,8 @@ def update_comment(
     updated_comment = comment_crud.update(
         db=db,
         comment_id=comment_id,
-        obj_in=comment_update
+        obj_in=comment_update,
+        author_id=current_user.id
     )
     return updated_comment
 

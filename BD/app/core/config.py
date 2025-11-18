@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
     JWT_SECRET: str
     JWT_EXPIRES_IN: int = 3600  # seconds
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60  # minutes (1 hour)
     DEBUG: bool = False
 
     class Config:

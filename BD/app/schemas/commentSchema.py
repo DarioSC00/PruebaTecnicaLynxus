@@ -5,6 +5,8 @@ from .userSchema import UserOut
 
 class CommentCreate(BaseModel):
     body: str = Field(..., min_length=1)
+    task_id: Optional[int] = None
+    project_id: Optional[int] = None
 
 class CommentUpdate(BaseModel):
     body: Optional[str] = Field(None, min_length=1)
