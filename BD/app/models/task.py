@@ -24,9 +24,9 @@ class Task(Base):
     title = Column(String(200), nullable=False, index=True)  # For search
     description = Column(Text, nullable=True)  # Text for long descriptions
     
-    # Status and priority with Enum
-    status = Column(Enum(TaskStatus, values_callable=lambda obj: [e.value for e in obj]), nullable=False, default=TaskStatus.TODO, index=True)
-    priority = Column(Enum(TaskPriority, values_callable=lambda obj: [e.value for e in obj]), nullable=False, default=TaskPriority.MEDIUM, index=True)
+    # Status and priority as strings
+    status = Column(String(20), nullable=False, default="todo", index=True)
+    priority = Column(String(20), nullable=False, default="medium", index=True)
     
     # Due date
     due_date = Column(DateTime(timezone=True), nullable=True, index=True)  # Index to filter overdue

@@ -19,7 +19,7 @@ from app.core.database import SessionLocal, engine
 from app.core.security import get_password_hash
 from app.models.user import User
 from app.models.project import Project
-from app.models.task import Task, TaskStatus, TaskPriority
+from app.models.task import Task
 from app.models.comment import Comment
 
 
@@ -105,8 +105,8 @@ def create_seed_data():
             Task(
                 title="Configurar entorno de desarrollo",
                 description="Instalar dependencias, configurar Docker y base de datos",
-                status=TaskStatus.DONE,
-                priority=TaskPriority.HIGH,
+                status='done',
+                priority='high',
                 due_date=now - timedelta(days=5),
                 project_id=projects[0].id,
                 assignee_id=users[0].id
@@ -114,8 +114,8 @@ def create_seed_data():
             Task(
                 title="Diseñar modelos de datos",
                 description="Crear modelos para User, Project, Task y Comment con sus relaciones",
-                status=TaskStatus.DONE,
-                priority=TaskPriority.HIGH,
+                status='done',
+                priority='high',
                 due_date=now - timedelta(days=3),
                 project_id=projects[0].id,
                 assignee_id=users[0].id
@@ -123,8 +123,8 @@ def create_seed_data():
             Task(
                 title="Implementar autenticación JWT",
                 description="Sistema de registro, login y protección de rutas con JWT",
-                status=TaskStatus.DONE,
-                priority=TaskPriority.HIGH,
+                status='done',
+                priority='high',
                 due_date=now - timedelta(days=2),
                 project_id=projects[0].id,
                 assignee_id=users[1].id
@@ -132,8 +132,8 @@ def create_seed_data():
             Task(
                 title="Crear endpoints de proyectos",
                 description="CRUD completo para proyectos con paginación y búsqueda",
-                status=TaskStatus.DOING,
-                priority=TaskPriority.MEDIUM,
+                status='doing',
+                priority='medium',
                 due_date=now + timedelta(days=2),
                 project_id=projects[0].id,
                 assignee_id=users[0].id
@@ -141,8 +141,8 @@ def create_seed_data():
             Task(
                 title="Crear endpoints de tareas",
                 description="CRUD de tareas con filtros por estado, prioridad y fecha límite",
-                status=TaskStatus.DOING,
-                priority=TaskPriority.MEDIUM,
+                status='doing',
+                priority='medium',
                 due_date=now + timedelta(days=3),
                 project_id=projects[0].id,
                 assignee_id=users[1].id
@@ -150,8 +150,8 @@ def create_seed_data():
             Task(
                 title="Implementar sistema de comentarios",
                 description="Permitir agregar y eliminar comentarios en las tareas",
-                status=TaskStatus.TODO,
-                priority=TaskPriority.LOW,
+                status='todo',
+                priority='low',
                 due_date=now + timedelta(days=5),
                 project_id=projects[0].id,
                 assignee_id=users[0].id
@@ -159,8 +159,8 @@ def create_seed_data():
             Task(
                 title="Frontend: Páginas de proyectos y usuarios",
                 description="Crear interfaces consistentes para listar proyectos y usuarios",
-                status=TaskStatus.TODO,
-                priority=TaskPriority.MEDIUM,
+                status='todo',
+                priority='medium',
                 due_date=now + timedelta(days=7),
                 project_id=projects[0].id,
                 assignee_id=users[1].id
@@ -168,8 +168,8 @@ def create_seed_data():
             Task(
                 title="Documentación del API",
                 description="Completar documentación en FastAPI /docs y README",
-                status=TaskStatus.TODO,
-                priority=TaskPriority.LOW,
+                status='todo',
+                priority='low',
                 due_date=now + timedelta(days=10),
                 project_id=projects[0].id,
                 assignee_id=None
@@ -181,8 +181,8 @@ def create_seed_data():
             Task(
                 title="Análisis de competencia",
                 description="Investigar tendencias de diseño web actuales y competidores",
-                status=TaskStatus.DONE,
-                priority=TaskPriority.MEDIUM,
+                status='done',
+                priority='medium',
                 due_date=now - timedelta(days=7),
                 project_id=projects[1].id,
                 assignee_id=users[1].id
@@ -190,8 +190,8 @@ def create_seed_data():
             Task(
                 title="Wireframes de página principal",
                 description="Crear wireframes de baja fidelidad para la home",
-                status=TaskStatus.DOING,
-                priority=TaskPriority.HIGH,
+                status='doing',
+                priority='high',
                 due_date=now + timedelta(days=1),
                 project_id=projects[1].id,
                 assignee_id=users[1].id
@@ -199,8 +199,8 @@ def create_seed_data():
             Task(
                 title="Diseño de sistema de componentes",
                 description="Definir paleta de colores, tipografías y componentes reutilizables",
-                status=TaskStatus.TODO,
-                priority=TaskPriority.HIGH,
+                status='todo',
+                priority='high',
                 due_date=now + timedelta(days=4),
                 project_id=projects[1].id,
                 assignee_id=users[2].id
@@ -208,8 +208,8 @@ def create_seed_data():
             Task(
                 title="Implementar diseño responsive",
                 description="Asegurar que el diseño funcione en móvil, tablet y desktop",
-                status=TaskStatus.TODO,
-                priority=TaskPriority.MEDIUM,
+                status='todo',
+                priority='medium',
                 due_date=now + timedelta(days=8),
                 project_id=projects[1].id,
                 assignee_id=None

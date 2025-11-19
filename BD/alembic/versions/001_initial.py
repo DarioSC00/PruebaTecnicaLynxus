@@ -26,7 +26,9 @@ def upgrade() -> None:
         sa.Column('email', sa.String(), nullable=False),
         sa.Column('password_hash', sa.String(), nullable=False),
         sa.Column('name', sa.String(), nullable=True),
+        sa.Column('is_active', sa.Boolean(), nullable=True, server_default='true'),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
+        sa.Column('updated_at', sa.DateTime(), nullable=True, server_default=sa.text('now()')),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('email')
     )
@@ -41,6 +43,7 @@ def upgrade() -> None:
         sa.Column('owner_id', sa.Integer(), nullable=False),
         sa.Column('archived', sa.Boolean(), nullable=False, server_default='false'),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
+        sa.Column('updated_at', sa.DateTime(), nullable=True, server_default=sa.text('now()')),
         sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
     )
@@ -71,14 +74,17 @@ def upgrade() -> None:
         'comments',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('body', sa.String(), nullable=False),
-        sa.Column('task_id', sa.Integer(), nullable=False),
+        sa.Column('task_id', sa.Integer(), nullable=True),
+        sa.Column('project_id', sa.Integer(), nullable=True),
         sa.Column('author_id', sa.Integer(), nullable=False),
         sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('now()')),
         sa.ForeignKeyConstraint(['author_id'], ['users.id'], ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['task_id'], ['tasks.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
     )
     op.create_index('ix_comments_task_id', 'comments', ['task_id'])
+    op.create_index('ix_comments_project_id', 'comments', ['project_id'])
     op.create_index('ix_comments_author_id', 'comments', ['author_id'])
 
     # Create project_members association table
