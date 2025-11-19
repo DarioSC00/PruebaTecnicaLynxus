@@ -15,7 +15,7 @@ export type UserDetail = UserItem & {
     id: number;
     title: string;
     status: 'todo' | 'doing' | 'done';
-    priority: 'low' | 'med' | 'high';
+    priority: 'low' | 'medium' | 'high';
     due_date?: string | null;
   }>;
 };

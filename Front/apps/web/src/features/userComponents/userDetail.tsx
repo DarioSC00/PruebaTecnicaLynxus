@@ -364,7 +364,7 @@ export default function UserDetail({
                                 sx={{ ...getStatusColor(task.status), fontWeight: 600 }}
                               />
                               <Chip 
-                                label={task.priority === 'low' ? 'Low' : task.priority === 'med' || task.priority === 'medium' ? 'Medium' : 'High'}
+                                label={task.priority === 'low' ? 'Low' : task.priority === 'medium' ? 'Medium' : 'High'}
                                 size="small"
                                 sx={{ ...getPriorityColor(task.priority), fontWeight: 600 }}
                               />
