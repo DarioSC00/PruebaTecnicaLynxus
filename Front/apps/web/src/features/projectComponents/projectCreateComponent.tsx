@@ -59,7 +59,7 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
       setUsers(result.items);
     } catch (err) {
       console.error("Error loading users:", err);
-      toast.error("Error al cargar usuarios");
+      toast.error("⚠️ Could not load users. Please try again.");
     } finally {
       setLoadingUsers(false);
     }
@@ -72,7 +72,7 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!formData.name.trim()) {
-      toast.error("Project name is required");
+      toast.error("⚠️ Project name is required");
       return;
     }
     setSubmitting(true);
@@ -88,7 +88,7 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
         await Promise.all(memberPromises);
       }
 
-      toast.success("Project created successfully");
+      toast.success("✅ Project created successfully!");
       setOpen(false);
       setFormData({ name: "", description: "" });
       setSelectedMembers([]);
@@ -96,7 +96,7 @@ export default function ProjectCreateComponent({ defaultOpen = false, onCreated 
       router.push("/project");
     } catch (err: unknown) {
       console.error("createProject error:", err);
-      toast.error("Error creating project. Please try again.");
+      toast.error("❌ Could not create project. Please try again.");
     } finally {
       setSubmitting(false);
     }

@@ -57,7 +57,7 @@ export default function TaskList() {
         console.log("✅ listTasks response:", res);
       } catch (err) {
         console.error("❌ listTasks error:", err);
-        toast.error("Error loading tasks");
+        toast.error("⚠️ Could not load tasks. Please refresh.");
         if (mounted) React.startTransition(() => setTasks([]));
       } finally {
         if (mounted) React.startTransition(() => setLoading(false));

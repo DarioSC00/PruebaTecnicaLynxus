@@ -81,7 +81,7 @@ export default function ProjectDetail({
     const timeout = setTimeout(() => {
       if (mounted) {
         console.warn("[detailProject] request timeout");
-        const errorMsg = "Request timeout";
+        const errorMsg = "⏱️ Request timeout. Please check your connection.";
         setError(errorMsg);
         toast.error(errorMsg);
         setLoading(false);
@@ -105,7 +105,7 @@ export default function ProjectDetail({
       } catch (err) {
         console.error("[detailProject] error fetching project:", err);
         if (!mounted) return;
-        const errorMsg = "Could not load project";
+        const errorMsg = "⚠️ Could not load project details. Please try again.";
         setError(errorMsg);
         toast.error(errorMsg);
       } finally {
@@ -143,7 +143,7 @@ export default function ProjectDetail({
         setComments([]);
       } else {
         // Solo mostrar error para otros casos (500, network, etc.)
-        toast.error("Could not load comments");
+        toast.error("⚠️ Could not load comments. Please refresh.");
         setComments([]);
       }
     } finally {
@@ -156,13 +156,13 @@ export default function ProjectDetail({
     setCreatingComment(true);
     try {
       await projectService.createProjectComment(projectId, { body: newComment });
-      toast.success("Comment created successfully");
+      toast.success("✅ Comment added successfully!");
       setNewComment("");
       await loadComments();
       onUpdate?.();
     } catch (err) {
       console.error("[detailProject] error creating comment:", err);
-      toast.error("Could not create comment");
+      toast.error("❌ Could not create comment. Please try again.");
     } finally {
       setCreatingComment(false);
     }
@@ -177,12 +177,12 @@ export default function ProjectDetail({
     if (!pendingCommentId) return;
     try {
       await projectService.deleteProjectComment(pendingCommentId);
-      toast.success("Comment deleted successfully");
+      toast.success("🗑️ Comment deleted successfully");
       setComments((c) => c.filter((x) => x.id !== pendingCommentId));
       onUpdate?.();
     } catch (err) {
       console.error("[detailProject] error deleting comment:", err);
-      toast.error("Could not delete comment");
+      toast.error("❌ Could not delete comment. Please try again.");
     } finally {
       setPendingCommentId(null);
     }
@@ -200,7 +200,7 @@ export default function ProjectDetail({
       setAvailableUsers(available);
     } catch (err) {
       console.error("[detailProject] error loading users:", err);
-      toast.error("Could not load users");
+      toast.error("⚠️ Could not load available users");
     } finally {
       setLoadingUsers(false);
     }
@@ -216,14 +216,14 @@ export default function ProjectDetail({
     setAddingMember(true);
     try {
       await projectService.addProjectMember(projectId, selectedUserId);
-      toast.success("Member added successfully");
+      toast.success("✅ Team member added successfully!");
       setShowAddMember(false);
       setSelectedUserId(null);
       setReloadKey(k => k + 1); // Recargar datos del proyecto
       onUpdate?.();
     } catch (err: any) {
       console.error("[detailProject] error adding member:", err);
-      toast.error(err?.response?.data?.detail || "Could not add member");
+      toast.error(err?.response?.data?.detail || "❌ Could not add team member. Please try again.");
     } finally {
       setAddingMember(false);
     }
@@ -239,12 +239,12 @@ export default function ProjectDetail({
     if (!projectId || !pendingMemberId) return;
     try {
       await projectService.removeProjectMember(projectId, pendingMemberId);
-      toast.success("Member removed successfully");
+      toast.success("🗑️ Team member removed successfully");
       setReloadKey(k => k + 1); // Recargar datos del proyecto
       onUpdate?.();
     } catch (err: any) {
       console.error("[detailProject] error removing member:", err);
-      toast.error(err?.response?.data?.detail || "Could not remove member");
+      toast.error(err?.response?.data?.detail || "❌ Could not remove team member. Please try again.");
     } finally {
       setPendingMemberId(null);
     }

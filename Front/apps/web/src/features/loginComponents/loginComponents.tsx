@@ -39,10 +39,10 @@ export default function LoginPage() {
       } catch {
         // ignore storage errors
       }
-      toast.success("Login successful! Welcome back.");
+      toast.success("🎉 Login successful! Welcome back.");
       router.push("/user");
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Login error";
+      const errorMessage = err instanceof Error ? err.message : "❌ Login failed. Please check your credentials.";
       toast.error(errorMessage);
       setError(errorMessage);
     } finally {

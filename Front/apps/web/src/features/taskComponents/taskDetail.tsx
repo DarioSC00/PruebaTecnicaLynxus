@@ -59,7 +59,7 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
         setTask(t ?? null);
       } catch (err) {
         console.error("Error loading task:", err);
-        toast.error("Could not load task");
+        toast.error("⚠️ Could not load task details. Please try again.");
         setTask(null);
       } finally {
         setLoading(false);
@@ -82,7 +82,7 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
       if (err?.response?.status === 404 || err?.response?.status === 403 || err?.response?.status === 401) {
         setComments([]);
       } else {
-        toast.error("Could not load comments");
+        toast.error("⚠️ Could not load comments. Please refresh.");
         setComments([]);
       }
     } finally {
@@ -95,13 +95,13 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
     setCreating(true);
     try {
       await commentService.createComment(taskId, { body: newComment });
-      toast.success("Comment created successfully");
+      toast.success("✅ Comment added successfully!");
       setNewComment("");
       await loadComments();
       onUpdate?.();
     } catch (err) {
       console.error("Error creating comment:", err);
-      toast.error("Could not create comment");
+      toast.error("❌ Could not create comment. Please try again.");
     } finally {
       setCreating(false);
     }
@@ -116,12 +116,12 @@ const TaskDetailComponent: React.FC<Props> = ({ taskId, open, onClose, onUpdate 
     if (!pendingCommentId) return;
     try {
       await commentService.deleteComment(pendingCommentId);
-      toast.success("Comment deleted successfully");
+      toast.success("🗑️ Comment deleted successfully");
       setComments((c) => c.filter((x) => x.id !== pendingCommentId));
       onUpdate?.();
     } catch (err) {
       console.error("Error deleting comment:", err);
-      toast.error("Could not delete comment");
+      toast.error("❌ Could not delete comment. Please try again.");
     } finally {
       setPendingCommentId(null);
       setConfirmDeleteComment(false);

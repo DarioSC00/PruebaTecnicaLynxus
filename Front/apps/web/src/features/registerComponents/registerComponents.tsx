@@ -45,7 +45,7 @@ export default function Register() {
 
     try {
       await registerWithEmail(payload);
-      toast.success("Registration successful! Please log in to continue.");
+      toast.success("✅ Registration successful! Redirecting to login...");
       router.push("/login");
     } catch (err: unknown) {
       const detail =
@@ -54,7 +54,7 @@ export default function Register() {
             (err as any).response?.data?.detail
           : undefined;
       const message = detail ?? (err instanceof Error ? err.message : String(err));
-      const errorMessage = message || "Registration error";
+      const errorMessage = message || "❌ Registration failed. Please try again.";
       toast.error(errorMessage);
       setError(errorMessage);
     } finally {

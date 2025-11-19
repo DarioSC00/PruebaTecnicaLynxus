@@ -93,7 +93,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
           setUsers(res.items ?? []);
         } catch (err) {
           console.error("Error loading users:", err);
-          toast.error("Could not load users");
+          toast.error("⚠️ Could not load users list");
         } finally {
           setLoadingUsers(false);
         }
@@ -104,7 +104,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title?.trim()) {
-      toast.error("Title is required");
+      toast.error("⚠️ Task title is required");
       return;
     }
 
@@ -121,7 +121,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
 
       await taskService.createTask(projectId, taskData);
       
-      toast.success("Task created successfully");
+      toast.success("✅ Task created successfully!");
       
       setFormData({
         title: "",
@@ -138,7 +138,7 @@ export default function TaskCreateComponent({ projectId, defaultOpen = false, op
       handleClose();
     } catch (err) {
       console.error("Error creating task:", err);
-      toast.error("Error creating task");
+      toast.error("❌ Could not create task. Please try again.");
     } finally {
       setLoading(false);
     }

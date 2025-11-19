@@ -60,7 +60,7 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
           setUsers(res.items ?? []);
         } catch (err) {
           console.error("Error loading users:", err);
-          toast.error("Could not load users");
+          toast.error("⚠️ Could not load users list");
         } finally {
           setLoadingUsers(false);
         }
@@ -88,7 +88,7 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
 
   const handleAddMember = async () => {
     if (!selectedUserId) {
-      toast.error("Please select a user");
+      toast.error("⚠️ Please select a user to add");
       return;
     }
 
@@ -96,14 +96,14 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
     
     // Verificar si ya es miembro
     if (members.find(m => m.id === userId)) {
-      toast.error("User is already a member");
+      toast.error("⚠️ This user is already a team member");
       return;
     }
 
     setSubmitting(true);
     try {
       await projectService.addProjectMember(projectId, userId);
-      toast.success("Member added successfully");
+      toast.success("✅ Team member added successfully!");
       
       // Actualizar lista de miembros
       const user = users.find(u => u.id === userId);
@@ -116,7 +116,7 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
     } catch (err: unknown) {
       console.error("Error adding member:", err);
       type ErrorResponse = { response?: { data?: { detail?: string } } };
-      const errorMsg = (err as ErrorResponse)?.response?.data?.detail || "Error adding member";
+      const errorMsg = (err as ErrorResponse)?.response?.data?.detail || "❌ Could not add team member. Please try again.";
       toast.error(errorMsg);
     } finally {
       setSubmitting(false);
@@ -133,13 +133,13 @@ export default function AddMembersModal({ projectId, open, onClose, onMemberAdde
     setSubmitting(true);
     try {
       await projectService.removeProjectMember(projectId, pendingMemberId);
-      toast.success("Member removed successfully");
+      toast.success("🗑️ Team member removed successfully");
       setMembers(prev => prev.filter(m => m.id !== pendingMemberId));
       onMemberAdded?.();
     } catch (err: unknown) {
       console.error("Error removing member:", err);
       type ErrorResponse = { response?: { data?: { detail?: string } } };
-      const errorMsg = (err as ErrorResponse)?.response?.data?.detail || "Error removing member";
+      const errorMsg = (err as ErrorResponse)?.response?.data?.detail || "❌ Could not remove team member. Please try again.";
       toast.error(errorMsg);
     } finally {
       setSubmitting(false);
