@@ -1,20 +1,27 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 # Importar routers existentes
 from app.api.routes import userRoutes, projectRoutes, taskRoutes, commentRoutes, projectCommentRoutes, projectMemberRoutes
 
 app = FastAPI(title="API PruebaTecnicaLynxus")
 
+# Allow localhost for development and Render URLs for production
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:8000",
+    # Add your Render frontend URL here when deployed
+    os.getenv("FRONTEND_URL", ""),
 ]
+
+# Remove empty strings from origins
+origins = [origin for origin in origins if origin]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins if origins else ["*"],  # Allow all if no specific origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
